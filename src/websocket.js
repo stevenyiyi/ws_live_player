@@ -17,9 +17,7 @@ export class WebsocketTransport extends TinyEvents {
         }
       }
     });
-    let subprotos = protocols.split(",");
-    this.ws = new WebSocket(url, subprotos);
-    this._setupWebsocket(this.ws);
+    this.ready = this.connect();
   }
 
   _setupWebsocket(ws) {
@@ -99,9 +97,51 @@ export class WebsocketTransport extends TinyEvents {
     return ["rtmp", "rtsp"];
   }
 
+  connect() {
+    return this.disconnect().then(() => {
+      let subprotos = this.protocols.split(",");
+      this.ws = new WebSocket(this.socket_url, subprotos);
+      this.ws.onopen = (e) => {
+        Log.log(`WS connect ${this.socket_url} success!`);
+        return e;
+      };
+      this.ws.onclose = (e) => {
+        Log.log(`WS onclose, code:${e.code}`);
+        this.emit("disconnected", e);
+        if (
+          e.code !== 1000 &&
+          e.code !== 4000 &&
+          e.code !== 4001 &&
+          e.code !== 4002 &&
+          e.code !== 4003
+        ) {
+          this.reconnect();
+        } else {
+          Promise.reject(e);
+        }
+      };
+      this.ws.onerror = (e) => {
+        Log.log("WS onerror!");
+        this.emit("error", e);
+      };
+      this.ws.onmessage = this.onMessage.bind(this);
+    });
+  }
+
   disconnect() {
     clearTimeout(this.timeoutID);
-    this.ws.close();
+    return new Promise((resolve) => {
+      if (this.ws) {
+        this.ws.onclose = (e) => {
+          Log.log(`closed, code:${e.code}.`);
+          resolve();
+        };
+        this.ws.close();
+      } else {
+        Log.log("closed");
+        resolve();
+      }
+    });
   }
 
   send(_data, fn) {
