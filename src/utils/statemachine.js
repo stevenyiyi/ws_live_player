@@ -79,7 +79,7 @@ export class StateMachine {
     if (this.currentState.name === stateName) return Promise.resolve();
     if (this.currentState.transitions.has(stateName)) {
       let state = this.states.get(stateName);
-      return this._promisify(state.deactivate.call(this))
+      return this._promisify(this.currentState.deactivate.call(this))
         .then(state.activate.bind(this))
         .then((data) => {
           this.currentState = state;
