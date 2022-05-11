@@ -1,0 +1,23 @@
+{
+  "name": "ws-live-player",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "start": "parcel index.html --open",
+    "build": "parcel build index.html",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "parcel-bundler": "latest"
+  },
+  "devDependencies": {
+    "@babel/core": "latest",
+    "typescript": "latest",
+    "eslint": "latest"
+  },
+  "resolutions": {
+    "@babel/preset-env": "latest"
+  },
+  "keywords": []
+}

@@ -1,0 +1,1 @@
+["_malloc", "_free", "_as_audio_decoder_init", "_as_audio_decoder_destroy", "_as_audio_decoder_process_header", "_as_audio_decoder_process_audio"]
