@@ -103,6 +103,7 @@ export class SDPParser {
     });
   }
 
+  /** v=0 */
   _parseVersion(line) {
     let matches = line.match(/^v=([0-9]+)$/);
     if (!matches || !matches.length) {
@@ -119,6 +120,9 @@ export class SDPParser {
     return true;
   }
 
+  /**  o=<username> <sess-id> <sess-version> <nettype> <addrtype>
+        <unicast-address>
+ */
   _parseOrigin(line) {
     let matches = line.match(
       /^o=([^ ]+) (-?[0-9]+) (-?[0-9]+) (IN) (IP4|IP6) ([^ ]+)$/
@@ -139,6 +143,7 @@ export class SDPParser {
     return true;
   }
 
+  /** s=<session name> */
   _parseSessionName(line) {
     let matches = line.match(/^s=([^\r\n]+)$/);
     if (!matches || !matches.length) {
@@ -151,6 +156,7 @@ export class SDPParser {
     return true;
   }
 
+  /** t=<start-time> <stop-time> */
   _parseTiming(line) {
     let matches = line.match(/^t=([0-9]+) ([0-9]+)$/);
     if (!matches || !matches.length) {
@@ -165,6 +171,7 @@ export class SDPParser {
     return true;
   }
 
+  /** m=<media> <port> <proto> <fmt> ... */
   _parseMediaDescription(line, media) {
     let matches = line.match(/^m=([^ ]+) ([^ ]+) ([^ ]+)[ ]/);
     if (!matches || !matches.length) {
