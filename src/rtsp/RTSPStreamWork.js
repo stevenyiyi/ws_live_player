@@ -144,6 +144,9 @@ class RTSPStreamWork {
       for (const frame of accessunit.units) {
         track.parser.parseNAL(frame);
       }
+      if (track.sps && track.pps) {
+        track.ready = true;
+      }
     } else if (
       track.ptype === PayloadType.H265 &&
       (!track.vps || !track.sps || !track.pps)
@@ -154,7 +157,34 @@ class RTSPStreamWork {
       for (const frame of accessunit.units) {
         track.parser.parseNAL(frame);
       }
+      if (track.vps && track.sps && track.pps) {
+        track.ready = true;
+      }
     } else if (track.ptype === PayloadType.AAC && !track.config) {
+      if (!accessunit.config) {
+        throw new Error(
+          "Receive aac accessunit, but have not config information!"
+        );
+      }
+      track.config = accessunit.config;
+      track.ready = true;
+    }
+
+    /// Check TS/PS container tracks ready
+    if (this.isContainer) {
+      let f = true;
+      const tracks = this.tracks[0].tracks;
+      for (const t of tracks) {
+        f = !!t.ready;
+      }
+      if (f) {
+        postMessage({
+          event: "onTsTracks",
+          seekable: this.client.seekable,
+          duration: this.client.duration,
+          tracks: tracks
+        });
+      }
     }
 
     if (this.firstVideoPts === -1 && track.type === "video") {
