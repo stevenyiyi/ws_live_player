@@ -59,8 +59,6 @@ export class TSParser {
     this.pesAsms = {};
     this.ontracks = null;
     this.toSkip = 0;
-    this.hasCodecConfig = false;
-    this.tracks = null;
   }
 
   parse(packet) {
@@ -231,7 +229,7 @@ export class TSParser {
     }
 
     if (tracks.size === 0) {
-      throw Error("Parse PMT, not found track!");
+      throw new Error("Parse PMT, not found track!");
     }
 
     /// Has codec special data?
@@ -241,18 +239,14 @@ export class TSParser {
         track.ptype === PayloadType.H265 ||
         track.ptype === PayloadType.AAC
       ) {
-        this.hasCodecConf = true;
-        break;
+        track.hasCodecConf = true;
+      } else {
+        track.hasCodecConf = false;
       }
     }
-
-    if (!this.hasCodecConf) {
-      // TODO: notify about tracks
-      if (this.ontracks) {
-        this.ontracks(tracks);
-      }
-    } else {
-      this.tracks = tracks;
+    // TODO: notify about tracks
+    if (this.ontracks) {
+      this.ontracks(tracks);
     }
   }
 }
