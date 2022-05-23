@@ -99,6 +99,11 @@ export default class RTSPStream extends BaseStream {
       this.isContainer = true;
     } else {
       this.hasBFrames = this._getHasBFrames();
+      this._decideMSE();
+      this.work.postMessage({
+        method: "onSupportedMSE",
+        params: { result: this.useMSE }
+      });
       this.processingTimer = setInterval(() => {
         this.process();
       }, 10);
@@ -108,6 +113,14 @@ export default class RTSPStream extends BaseStream {
   onTsTracks(tracks) {
     this.tracks[0].tracks = tracks;
     this.hasBFrames = this._getHasBFrames();
+    this._decideMSE();
+    this.work.postMessage({
+      method: "onSupportedMSE",
+      params: { result: this.useMSE }
+    });
+    this.processingTimer = setInterval(() => {
+      this.process();
+    }, 10);
   }
 
   onSample(accessunit) {

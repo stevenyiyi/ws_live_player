@@ -304,6 +304,14 @@ export class MSE {
     this.reset();
   }
 
+  set bufferDuration(buffDuration) {
+    this.bufferDuration_ = buffDuration;
+  }
+
+  get bufferDuration() {
+    return this.bufferDuration_;
+  }
+
   destroy() {
     this.reset();
     this.eventSource.destroy();
