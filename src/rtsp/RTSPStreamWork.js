@@ -87,12 +87,21 @@ class RTSPStreamWork {
 
   onTsTracks(tracks) {
     this.tracks[0].tracks = tracks;
-    postMessage({
-      event: "onTsTracks",
-      seekable: this.client.seekable,
-      duration: this.client.duration,
-      tracks: tracks
-    });
+    let hasCodecConf = false;
+    for (const track of tracks) {
+      if (track.hasCodecConf) {
+        hasCodecConf = true;
+        break;
+      }
+    }
+    if (!hasCodecConf) {
+      postMessage({
+        event: "onTsTracks",
+        seekable: this.client.seekable,
+        duration: this.client.duration,
+        tracks: tracks
+      });
+    }
   }
 
   onSample(accessunit) {
