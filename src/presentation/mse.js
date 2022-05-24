@@ -378,6 +378,7 @@ export class MSE {
           this.eventSource.dispatchEvent("sourceclosed");
         }
       };
+      /// Subscribe media source extensions event
       this.eventSource.addEventListener("sourceopen", this._sourceOpen);
       this.eventSource.addEventListener("sourceended", this._sourceEnded);
       this.eventSource.addEventListener("sourceclose", this._sourceClose);
