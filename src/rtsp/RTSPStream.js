@@ -104,9 +104,13 @@ export default class RTSPStream extends BaseStream {
         method: "onSupportedMSE",
         params: { result: this.useMSE }
       });
-      this.processingTimer = setInterval(() => {
-        this.process();
-      }, 10);
+      if (this.useMSE) {
+        this.eventSource.dispatchEvent("tracks", tracks);
+      } else {
+        this.processingTimer = setInterval(() => {
+          this.process();
+        }, 10);
+      }
     }
   }
 
@@ -118,9 +122,13 @@ export default class RTSPStream extends BaseStream {
       method: "onSupportedMSE",
       params: { result: this.useMSE }
     });
-    this.processingTimer = setInterval(() => {
-      this.process();
-    }, 10);
+    if (this.useMSE) {
+      this.eventSource.dispatchEvent("tracks", tracks);
+    } else {
+      this.processingTimer = setInterval(() => {
+        this.process();
+      }, 10);
+    }
   }
 
   onSample(accessunit) {

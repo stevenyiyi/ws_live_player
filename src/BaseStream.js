@@ -1,5 +1,7 @@
+import { EventEmitter } from "util/event.js";
 export default class BaseStream {
   constructor(options) {
+    this.eventSource = new EventEmitter();
     this.cacheSize = options.cacheSize || 500; //default ms
     this.wsurl = options.wsurl;
     this.video = options.video;
