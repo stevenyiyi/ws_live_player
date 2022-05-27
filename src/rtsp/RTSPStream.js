@@ -131,77 +131,9 @@ export default class RTSPStream extends BaseStream {
     }
   }
 
+  /// MSE  accessunit event notify
   onSample(accessunit) {
-    if (
-      accessunit.ctype === PayloadType.H264 ||
-      accessunit.ctype === PayloadType.H265
-    ) {
-      if (!this.firstRAP && accessunit.isKeyFrame()) {
-        this.firstRAP = true;
-      }
-    }
-    if (!this.firstRAP) {
-      /// Drop accessunit ...
-      return;
-    }
-
-    let track = null;
-    /// Find track
-    if (
-      this.tracks[0].ptype === PayloadType.TS ||
-      this.tracks[0].ptype === PayloadType.PS
-    ) {
-      for (const t of this.tracks[0].tracks) {
-        if (t.ptype === accessunit.ctype) {
-          track = t;
-          break;
-        }
-      }
-    } else {
-      for (const t of this.tracks) {
-        if (t.ptype === accessunit.ctype) {
-          track = t;
-          break;
-        }
-      }
-    }
-
-    if (!track) {
-      return;
-    }
-
-    if (track.ptype === PayloadType.H264 && (!track.sps || !track.pps)) {
-      if (!track.parser) {
-        track.parser = new H264Parser(track);
-      }
-      for (const frame of accessunit.units) {
-        track.parser.parseNAL(frame);
-      }
-    } else if (
-      track.ptype === PayloadType.H265 &&
-      (!track.vps || !track.sps || !track.pps)
-    ) {
-      if (!track.parser) {
-        track.parser = new H265Parser(track);
-      }
-      for (const frame of accessunit.units) {
-        track.parser.parseNAL(frame);
-      }
-    }
-    if (this.firstVideoPts === -1 && track.type === "video") {
-      this.firstVideoPts = accessunit.pts;
-    } else if (this.firstAudioPts === -1 && track.type === "audio") {
-      this.firstAudioPts = accessunit.pts;
-    }
-    track.sampleQueue.push(accessunit);
-  }
-
-  onAudioBuffer(sample) {
-    if (this.firstAudioPts < 0) {
-      this.firstAudioPts = sample.pts;
-      this._initAudioFeeder();
-    }
-    this.audioBuffers.push(sample);
+    this.eventSource.dispatchEvent("sample", accessunit);
   }
 
   onFrameBuffer(sample) {
