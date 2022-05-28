@@ -180,8 +180,13 @@ export class SDPParser {
     }
 
     media.type = matches[1];
+    if (!["video", "audio", "text", "application"].includes(media.type)) {
+      throw new Error(`Invalid sdp Media Descriptions:${line}`);
+    }
+
     media.port = matches[2];
     media.proto = matches[3];
+
     media.fmt = line
       .substr(matches[0].length)
       .split(" ")
