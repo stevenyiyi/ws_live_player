@@ -70,23 +70,32 @@ class RTSPStreamWork {
   onTracks(tracks) {
     this.tracks = tracks;
     if (
-      tracks[0].ptype === PayloadType.TS ||
-      tracks[0].ptype === PayloadType.PS
+      tracks[0].type === PayloadType.TS ||
+      tracks[0].type === PayloadType.PS
     ) {
       this.isContainer = true;
     } else {
       this.isContainer = false;
     }
-    postMessage({
-      event: "onTracks",
-      seekable: this.client.seekable,
-      duration: this.client.duration,
-      tracks: tracks
-    });
+    if (!this.isContainer) {
+      postMessage({
+        event: "onTracks",
+        seekable: this.client.seekable,
+        duration: this.client.duration,
+        tracks: tracks
+      });
+    }
   }
 
   onTsTracks(tracks) {
+    /** add duration\track\offset properties*/
+    for (const track of tracks) {
+      track.duration = this.tracks[0].duration;
+      track.track = this.tracks[0].track;
+      track.offset = this.tracks[0].offset;
+    }
     this.tracks[0].tracks = tracks;
+
     let hasCodecConf = false;
     for (const track of tracks) {
       if (track.hasCodecConf) {
@@ -123,18 +132,18 @@ class RTSPStreamWork {
     let track = null;
     /// Find track
     if (
-      this.tracks[0].ptype === PayloadType.TS ||
-      this.tracks[0].ptype === PayloadType.PS
+      this.tracks[0].type === PayloadType.TS ||
+      this.tracks[0].type === PayloadType.PS
     ) {
       for (const t of this.tracks[0].tracks) {
-        if (t.ptype === accessunit.ctype) {
+        if (t.type === accessunit.ctype) {
           track = t;
           break;
         }
       }
     } else {
       for (const t of this.tracks) {
-        if (t.ptype === accessunit.ctype) {
+        if (t.type === accessunit.ctype) {
           track = t;
           break;
         }
@@ -146,7 +155,7 @@ class RTSPStreamWork {
       return;
     }
 
-    if (track.ptype === PayloadType.H264 && (!track.sps || !track.pps)) {
+    if (track.type === PayloadType.H264 && (!track.sps || !track.pps)) {
       if (!track.parser) {
         track.parser = new H264Parser(track);
       }
@@ -157,7 +166,7 @@ class RTSPStreamWork {
         track.ready = true;
       }
     } else if (
-      track.ptype === PayloadType.H265 &&
+      track.type === PayloadType.H265 &&
       (!track.vps || !track.sps || !track.pps)
     ) {
       if (!track.parser) {
@@ -169,7 +178,7 @@ class RTSPStreamWork {
       if (track.vps && track.sps && track.pps) {
         track.ready = true;
       }
-    } else if (track.ptype === PayloadType.AAC && !track.config) {
+    } else if (track.type === PayloadType.AAC && !track.config) {
       if (!accessunit.config) {
         throw new Error(
           "Receive aac accessunit, but have not config information!"

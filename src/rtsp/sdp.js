@@ -9,7 +9,7 @@ export class SDPParser {
     this.origin = null;
     this.sessionName = null;
     this.timing = null;
-    this.sessionBlock = {};
+    this.sessionBlock = null;
     this.media = {};
     this.mediaMap = {};
   }
@@ -74,16 +74,19 @@ export class SDPParser {
             ) {
               /* Complete previous block and store it */
               this.media[currentMediaBlock.type] = currentMediaBlock;
+              this.sessionBlock = currentMediaBlock;
             }
 
             /* A wild media block appears */
             currentMediaBlock = {};
             currentMediaBlock.rtpmap = {};
-            this._parseMediaDescription(line, currentMediaBlock);
+            success =
+              success && this._parseMediaDescription(line, currentMediaBlock);
             break;
 
           case "a":
-            SDPParser._parseAttribute(line, currentMediaBlock);
+            success =
+              success && SDPParser._parseAttribute(line, currentMediaBlock);
             break;
 
           default:

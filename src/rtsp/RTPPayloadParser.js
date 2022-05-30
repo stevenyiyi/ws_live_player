@@ -35,7 +35,7 @@ export class RTPPayloadParser {
       let offset = 0;
       if (data.byteLength % TSParser.PACKET_LENGTH) {
         Log.error(`Invalid rtp ts payload length:${data.ByteLength}`);
-        return null;
+        throw new Error(`Invalid rtp ts payload length:${data.ByteLength}`);
       }
       while (offset < data.byteLength) {
         let parsed = this.tsparser.parse(

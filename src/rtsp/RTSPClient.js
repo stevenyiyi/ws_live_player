@@ -22,7 +22,6 @@ export default class RTSPClient extends BaseClient {
     this.awaitingPromises = {};
     this.clientSM.ontracks = (tracks) => {
       this.emit("tracks", tracks);
-      this.startStreamFlush();
     };
     this.clientSM.ontstracks = (tracks) => {
       this.emit("tstracks", tracks);

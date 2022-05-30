@@ -159,69 +159,60 @@ export class TSParser {
           switch (pesType) {
             case PESType.AAC:
               tracks.add({
-                type: "audio",
-                ptype: PayloadType.AAC,
+                type: PayloadType.AAC,
                 offset: 0
               });
               break;
             case PESType.PCMA:
               tracks.add({
-                type: "audio",
-                ptype: PayloadType.PCMA,
+                type: PayloadType.PCMA,
                 offset: 0
               });
               break;
             case PESType.PCMU:
               tracks.add({
-                type: "audio",
-                ptype: PayloadType.PCMU,
+                type: PayloadType.PCMU,
                 offset: 0
               });
               break;
             case PESType.G722:
               tracks.add({
-                type: "audio",
-                ptype: PayloadType.G722,
+                type: PayloadType.G722,
                 offset: 0
               });
               break;
             case PESType.G723:
               tracks.add({
-                type: "audio",
-                ptype: PayloadType.G723,
+                type: PayloadType.G723,
                 offset: 0
               });
               break;
             case PESType.G726:
               tracks.add({
-                type: "audio",
-                ptype: PayloadType.G726,
+                type: PayloadType.G726,
                 offset: 0
               });
               break;
             case PESType.G729:
               tracks.add({
-                type: "audio",
-                ptype: PayloadType.G729,
+                type: PayloadType.G729,
                 offset: 0
               });
               break;
             case PESType.H264:
               tracks.add({
-                type: "video",
-                ptype: PayloadType.H264,
+                type: PayloadType.H264,
                 offset: 0
               });
               break;
             case PESType.H265:
               tracks.add({
-                type: "video",
-                ptype: PayloadType.H265,
+                type: PayloadType.H265,
                 offset: 0
               });
               break;
             default:
-              throw new Error(`Invalid pes type:${pesType}`);
+              throw new Error(`Invalid pes type:${pesType} not supported!`);
           }
         }
       }
@@ -235,9 +226,9 @@ export class TSParser {
     /// Has codec special data?
     for (const track of tracks) {
       if (
-        track.ptype === PayloadType.H264 ||
-        track.ptype === PayloadType.H265 ||
-        track.ptype === PayloadType.AAC
+        track.type === PayloadType.H264 ||
+        track.type === PayloadType.H265 ||
+        track.type === PayloadType.AAC
       ) {
         track.hasCodecConf = true;
       } else {
