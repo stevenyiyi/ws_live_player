@@ -9,4 +9,4 @@ document.getElementById("app").innerHTML = `
 </div>
 `;
 let t = document.getElementById("idts");
-t.innerHTML += window.performance.timeOrigin;
+t.innerHTML += window.performance.now();

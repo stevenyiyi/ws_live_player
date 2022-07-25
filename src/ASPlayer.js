@@ -385,7 +385,7 @@ class ASPlayer extends HTMLElement {
       ogvjsVideoFrameRate: {
         get: function getOgvJsVideoFrameRate() {
           if (this._videoInfo) {
-            if (this._videoInfo.fps == 0) {
+            if (this._videoInfo.fps === 0) {
               return this._totalFrameCount / (this._totalFrameTime / 1000);
             } else {
               return this._videoInfo.fps;
