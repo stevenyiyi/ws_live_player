@@ -1437,7 +1437,7 @@ class ASPlayer extends HTMLElement {
         return;
       } else if (
         this._seekMode === SeekMode.FAST &&
-        this._codec.keyframeTimestamp == this._codec.frameTimestamp
+        this._codec.keyframeTimestamp === this._codec.frameTimestamp
       ) {
         // Found some frames? Go ahead now!
         this._continueSeekedPlayback();
@@ -1571,7 +1571,7 @@ class ASPlayer extends HTMLElement {
     } else {
       // Reached the bisection target!
       if (
-        this._seekState == SeekState.BISECT_TO_TARGET &&
+        this._seekState === SeekState.BISECT_TO_TARGET &&
         this._codec.hasVideo &&
         this._codec.keyframeTimestamp < this._codec.frameTimestamp
       ) {
@@ -1901,7 +1901,7 @@ class ASPlayer extends HTMLElement {
           audioState = this._audioFeeder.getPlaybackState();
           playbackPosition = this._getPlaybackTime(audioState);
           audioEnded =
-            this._dataEnded && this._audioFeeder.durationBuffered == 0;
+            this._dataEnded && this._audioFeeder.durationBuffered === 0;
 
           if (
             this._prebufferingAudio &&
