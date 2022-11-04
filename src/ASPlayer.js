@@ -1,8 +1,9 @@
-import extend from "../utils/extend";
-import ASTimeRanges from "../utils/ASTimeRanges";
-import ASMediaError from "../utils/ASMediaError";
+import extend from "./utils/extend";
+import ASTimeRanges from "./utils/ASTimeRanges";
+import ASMediaError from "./utils/ASMediaError";
 import ASMediaType from "./ASMediaType";
 import Bisector from "./Bisector";
+import RTSPStream from "./rtsp/RTSPStream";
 import AudioFeeder from "./audio-feeder/audio-feeder";
 import { YUVCanvas } from "./yuv-canvas/yuvcanvas";
 const constants = {
@@ -382,7 +383,7 @@ class ASPlayer extends HTMLElement {
       /**
        * Custom video framerate property
        */
-      ogvjsVideoFrameRate: {
+      asjsVideoFrameRate: {
         get: function getOgvJsVideoFrameRate() {
           if (this._videoInfo) {
             if (this._videoInfo.fps === 0) {
@@ -2516,7 +2517,7 @@ class ASPlayer extends HTMLElement {
         // are built up.
         this._stream = this._options.stream;
       } else {
-        this._stream = new StreamFile({
+        this._stream = new RTSPStream({
           url: this.src,
           cacheSize: 16 * 1024 * 1024,
 

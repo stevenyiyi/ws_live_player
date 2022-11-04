@@ -3,8 +3,6 @@ import { BaseStream } from "../BaseStream.js";
 import { PayloadType } from "../StreamDefine.js";
 import { Remuxer } from "../remuxer/remuxer.js";
 import { MSE } from "../presentation/mse.js";
-import { H264Parser } from "../parsers/h264.js";
-import { H265Parser } from "../parsers/h265.js";
 import AudioFeeder from "../audio-feeder/audio-feeder";
 
 const LOG_TAG = "RTSPStream";
@@ -170,19 +168,9 @@ export default class RTSPStream extends BaseStream {
         track.sps &&
         track.pps
       ) {
-        if (!this.videoDecoder) {
-          this._loadVideoCodec(() => {
-            this.loadedVideoMetadata = true;
-            finish(true);
-          });
-        }
+        this.loadedVideoMetadata = true;
       } else if (track.type === "audio") {
-        if (!this.audioDecoder) {
-          this._loadAudioCodec(() => {
-            this.loadedAudioMetadata = true;
-            finish(true);
-          }, track.ptype);
-        }
+        this.loadedAudioMetadata = true;
       }
     }
 
