@@ -35,6 +35,7 @@ export default class RTSPStream extends BaseStream {
     this.firstAudioPts = -1;
     this.firstVideoPts = -1;
     this.lastKeyframeTimestamp = -1;
+    this.firstPlaying = false;
 
     this.work = new Worker("RTSPStreamWork.js");
     this.work.onmessage = (event) => {
@@ -139,6 +140,15 @@ export default class RTSPStream extends BaseStream {
       this.firstVideoPts = sample.pts;
     }
     this.videoBuffers.push(sample);
+    if (!this.firstPlaying && this._getCacheLength() >= this.cacheSize) {
+      this.eventSource.dispatchEvent("canplaythrough");
+      this.firstPlaying = true;
+    } else if (
+      this.firstPlaying &&
+      this._getCacheLength() < this.cacheSize / 2
+    ) {
+      this.eventSource.dispatchEvent("buffering");
+    }
   }
 
   onClear() {
