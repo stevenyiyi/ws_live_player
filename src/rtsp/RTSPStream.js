@@ -106,9 +106,7 @@ export default class RTSPStream extends BaseStream {
       if (this.useMSE) {
         this.eventSource.dispatchEvent("tracks", tracks);
       } else {
-        this.processingTimer = setInterval(() => {
-          this.process();
-        }, 10);
+        this.eventSource.dispatchEvent("loadedmetadata");
       }
     }
   }
@@ -124,9 +122,7 @@ export default class RTSPStream extends BaseStream {
     if (this.useMSE) {
       this.eventSource.dispatchEvent("tracks", tracks);
     } else {
-      this.processingTimer = setInterval(() => {
-        this.process();
-      }, 10);
+      this.eventSource.dispatchEvent("loadedmetadata");
     }
   }
 
@@ -145,9 +141,10 @@ export default class RTSPStream extends BaseStream {
       this.firstPlaying = true;
     } else if (
       this.firstPlaying &&
-      this._getCacheLength() < this.cacheSize / 2
+      this._getCacheLength() < this.cacheSize / 4
     ) {
       this.eventSource.dispatchEvent("buffering");
+      this.buffering = true;
     }
   }
 
@@ -201,9 +198,13 @@ export default class RTSPStream extends BaseStream {
     }
   }
 
-  discardFrame(callback) {}
+  discardFrame(callback) {
+    Log.log("Discard video frame!");
+  }
 
-  discardAudio(callback) {}
+  discardAudio(callback) {
+    Log.log("Discard audio frame!");
+  }
 
   _getCacheLength() {
     let cachesize = 0;

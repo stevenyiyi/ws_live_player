@@ -212,9 +212,7 @@ class ASPlayer extends HTMLElement {
           if (
             this.duration < Infinity &&
             this._stream &&
-            this._stream.seekable &&
-            this._codec &&
-            this._codec.seekable
+            this._stream.seekable
           ) {
             return new ASTimeRanges([[0, this._duration]]);
           } else {
@@ -305,8 +303,7 @@ class ASPlayer extends HTMLElement {
           } else if (
             this._started &&
             !this._muted &&
-            this._codec &&
-            this._codec.hasAudio
+            this.stream.hasAudio
           ) {
             this._log("unmuting: switching from timer to audio clock");
             this._initAudioFeeder();
@@ -383,8 +380,8 @@ class ASPlayer extends HTMLElement {
       /**
        * Custom video framerate property
        */
-      asjsVideoFrameRate: {
-        get: function getOgvJsVideoFrameRate() {
+      videoFrameRate: {
+        get: function getVideoFrameRate() {
           if (this._videoInfo) {
             if (this._videoInfo.fps === 0) {
               return this._totalFrameCount / (this._totalFrameTime / 1000);
@@ -400,8 +397,8 @@ class ASPlayer extends HTMLElement {
       /**
        * Custom audio metadata property
        */
-      asjsAudioChannels: {
-        get: function getOgvJsAudioChannels() {
+      audioChannels: {
+        get: function getAudioChannels() {
           if (this._audioInfo) {
             return this._audioInfo.channels;
           } else {
@@ -413,8 +410,8 @@ class ASPlayer extends HTMLElement {
       /**
        * Custom audio metadata property
        */
-      asjsAudioSampleRate: {
-        get: function getOgvJsAudioChannels() {
+      audioSampleRate: {
+        get: function getAudioChannels() {
           if (this._audioInfo) {
             return this._audioInfo.rate;
           } else {
@@ -2505,31 +2502,41 @@ class ASPlayer extends HTMLElement {
     });
   }
 
+  _onCanPlayThrough() {
+
+  }
+
+  _onBuffering() {
+
+  }
+
+  _onStreamError(err) {
+
+  }
+
   _prepForLoad(preload) {
     this._stopVideo();
 
     let doLoad = () => {
       // @todo networkState == NETWORK_LOADING
-      if (this._options.stream) {
-        // Allow replacement compatible with the StreamFile interface.
-        // This interface may not be fully stable in future, but should
-        // help folks doing custom streaming until the MSE interfaces
-        // are built up.
-        this._stream = this._options.stream;
-      } else {
-        this._stream = new RTSPStream({
-          url: this.src,
-          cacheSize: 16 * 1024 * 1024,
+      this._stream = new RTSPStream({
+        url: this.src,
+        cacheSize: 16 * 1024 * 1024,
 
           // Workaround for https://github.com/stevenyiyi/anysee.js/issues/514
           // binary string used for progressive downloads can cause
           // data corruption when UTF-16 BOM markers appear at chunk
           // boundaries.
           progressive: false
-        });
-      }
+      });
+
+      // Subscribe events for stream
+      this._stream.eventSource.addEventListener("canplaythrough", this._onCanPlayThrough.bind(this));
+      this._stream.eventSource.addEventListener("buffering", this._onBuffering.bind(this));
+      this._stream.eventSource.addEventListener("streamerror", this._onStreamError.bind(this));
+      
       this._stream
-        .load()
+        .load() 
         .then(() => {
           this._loading = false;
 
