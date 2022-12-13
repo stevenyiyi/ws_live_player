@@ -2502,8 +2502,35 @@ class ASPlayer extends HTMLElement {
     });
   }
 
+  _onPlayAVSample() {
+    if(this._stream.hasVideo) {
+      let videoBuffer = this._stream.videoBuffers.shift();
+      if(!videoBuffer) {
+        if(this.onwaiting) {
+          this.onwaiting();
+        } else {
+          this._log("Waiting video buffer!");
+        }
+      } else {
+        let pts = videoBuffer.timestamp;
+        let nowts = window.performance.now();
+        if((this._startTime + pts) <= nowts) {
+          this.YUVCanvas.drawFrame(videoBuffer);
+        }
+      }
+    }
+    if(this._stream.hasAudio) {
+      this._audioFeeder.bufferData(this._stream.audioBuffers.shift());
+    }
+  }
+
   _onCanPlayThrough() {
 
+    if(this._startTime < 0) {
+      this._startTime = window.performance.now();
+    }
+
+    this._timerID = setInterval(this._onPlayAVSample.bind(this), 1);
   }
 
   _onBuffering() {

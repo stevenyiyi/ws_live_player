@@ -139,13 +139,7 @@ export default class RTSPStream extends BaseStream {
     if (!this.firstPlaying && this._getCacheLength() >= this.cacheSize) {
       this.eventSource.dispatchEvent("canplaythrough");
       this.firstPlaying = true;
-    } else if (
-      this.firstPlaying &&
-      this._getCacheLength() < this.cacheSize / 4
-    ) {
-      this.eventSource.dispatchEvent("buffering");
-      this.buffering = true;
-    }
+    } 
   }
 
   onClear() {
