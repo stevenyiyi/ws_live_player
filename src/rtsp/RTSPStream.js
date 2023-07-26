@@ -3,7 +3,6 @@ import { BaseStream } from "../BaseStream.js";
 import { PayloadType } from "../StreamDefine.js";
 import { Remuxer } from "../remuxer/remuxer.js";
 import { MSE } from "../presentation/mse.js";
-import AudioFeeder from "../audio-feeder/audio-feeder";
 
 const LOG_TAG = "RTSPStream";
 const Log = getTagged(LOG_TAG);
@@ -129,17 +128,6 @@ export default class RTSPStream extends BaseStream {
   /// MSE  accessunit event notify
   onSample(accessunit) {
     this.eventSource.dispatchEvent("sample", accessunit);
-  }
-
-  onFrameBuffer(sample) {
-    if (this.firstVideoPts < 0) {
-      this.firstVideoPts = sample.pts;
-    }
-    this.videoBuffers.push(sample);
-    if (!this.firstPlaying && this._getCacheLength() >= this.cacheSize) {
-      this.eventSource.dispatchEvent("canplaythrough");
-      this.firstPlaying = true;
-    } 
   }
 
   onClear() {
@@ -335,14 +323,5 @@ export default class RTSPStream extends BaseStream {
       }
     }
     return f;
-  }
-
-  _initAudioFeeder() {
-    let audioOptions = {
-      /// Buffer in largeish chunks to survive long CPU spikes on slow CPUs (eg, 32-bit iOS)
-      bufferSize: 8192
-    };
-    let audioFeeder = (this._audioFeeder = new AudioFeeder(audioOptions));
-    audioFeeder.init(this._audioInfo.channels, this._audioInfo.rate);
   }
 }

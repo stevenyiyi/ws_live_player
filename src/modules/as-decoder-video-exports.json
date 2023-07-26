@@ -1,1 +1,0 @@
-["_malloc", "_free", "_as_video_decoder_init", "_as_video_decoder_async", "_as_video_decoder_process_header", "_as_video_decoder_process_frame", "_as_video_decoder_destroy"]

@@ -5,7 +5,6 @@ import { PayloadType } from "../StreamDefine";
 import { WebsocketTransport } from "../websocket";
 import { H264Parser } from "../parsers/h264.js";
 import { H265Parser } from "../parsers/h265.js";
-import ASLoader from "../ASLoaderWeb.js";
 const LOG_TAG = "RTSPStreamWork";
 const Log = getTagged(LOG_TAG);
 var proxy = null;
@@ -216,9 +215,9 @@ class RTSPStreamWork {
     ) {
       this.lastKeyframeTimestamp = accessunit.pts;
     }
-    track.sampleQueue.push(accessunit);
     if (this.isReceviceMSE) {
       if (this.useMSE) {
+        track.sampleQueue.push(accessunit);
         let sample = track.sampleQueue.shift();
         while (sample) {
           postMessage(
@@ -229,31 +228,6 @@ class RTSPStreamWork {
             [sample]
           );
           sample = track.sampleQueue.shift();
-        }
-      } else {
-        /// Decode sample
-        if (track.type === "video" && !this.videoDecoder) {
-          this._loadVideoCodec(() => {
-            let sample = track.sampleQueue.shift();
-            while (sample) {
-              this._decodeSample(track, sample);
-              sample = track.sampleQueue.shift();
-            }
-          }, track.ptype);
-        } else if (track.type === "audio" && !this.audioDecoder) {
-          this._loadAudioCodec(() => {
-            let sample = track.sampleQueue.shift();
-            while (sample) {
-              this._decodeSample(track, sample);
-              sample = track.sampleQueue.shift();
-            }
-          }, track.ptype);
-        } else {
-          let sample = track.sampleQueue.shift();
-          while (sample) {
-            this._decodeSample(track, sample);
-            sample = track.sampleQueue.shift();
-          }
         }
       }
     }
@@ -385,153 +359,38 @@ class RTSPStreamWork {
     return f;
   }
 
-  _decodeSample(track, sample) {
-    if (track.type === "audio") {
-      this.audioDecoder.processAudio(sample, (ret) => {
-        /// post audio buffer to audio-feeder
-        postMessage(
-          {
-            event: "onAudioBuffer",
-            pts: sample.pts,
-            dts: sample.dts,
-            sample: this.audioDecoder.audioBuffer
-          },
-          [this.audioDecoder.audioBuffer]
-        );
-      });
-    } else if (track.type === "video") {
-      this.videoDecoder.processFrame(sample, (ret) => {
-        /// post video yuv buffer to yuv-cavans
-        postMessage(
-          {
-            event: "onFrameBuffer",
-            pts: sample.pts,
-            dts: sample.dts,
-            sample: this.videoDecoder.frameBuffer
-          },
-          [this.videoDecoder.frameBuffer]
-        );
-      });
-    }
-  }
-
-  _loadAudioCodec(callback, ptype) {
-    let audioClassMap = {
-      alaw: "ASDecoderAudioAlawW",
-      ulaw: "ASDecoderAudioUlawW",
-      g723: "ASDecoderAudioG723W",
-      g726: "ASDecoderAudioG726W",
-      g729: "ASDecoderAudioG729W",
-      aac: "ASDecoderAudioAacW"
-    };
-
-    let className = audioClassMap[PayloadType.stringCodec(ptype)];
-    if (!className) {
-      throw Error(`Not found audio codec:${ptype}`);
-    }
-    this.processing = true;
-    ASLoader.loadClass(
-      className,
-      (audioCodecClass) => {
-        let audioOptions = {};
-        audioCodecClass(audioOptions).then((decoder) => {
-          this.audioDecoder = decoder;
-          decoder.init(() => {
-            this.loadedAudioMetadata = decoder.loadedMetadata;
-            this.processing = false;
-            callback();
+  onmessage = (event) => {
+    switch (event.data.method) {
+      case "load":
+        if (!proxy) {
+          proxy = new RTSPStreamWork(event.data.options);
+        }
+        proxy.load(event.data.params.url);
+        break;
+      case "getCacheLength":
+        {
+          let r = proxy._getCacheLength();
+          postMessage({
+            method: "getCacheLength",
+            result: r
           });
-        });
-      },
-      {
-        work: this.options.work
-      }
-    );
-  }
-
-  _loadVideoCodec(callback, ptype) {
-    let simd = !!this.options.simd,
-      threading = !!this.options.threading;
-    let videoClassMap = {
-      avc: threading
-        ? simd
-          ? "ASDecoderVideoAvcSIMDMTW"
-          : "ASDecoderVideoAvcMTW"
-        : simd
-        ? "ASDecoderVideoAvcSIMDW"
-        : "ASDecoderVideoAvcW",
-      hevc: threading
-        ? simd
-          ? "ASDecoderVideoHevcSIMDMTW"
-          : "ASDecoderVideoHevcMTW"
-        : simd
-        ? "ASDecoderVideoHevcSIMDW"
-        : "ASVDecoderVideoHevcW",
-      av1: threading
-        ? simd
-          ? "ASDecoderVideoAV1SIMDMTW"
-          : "ASVDecoderVideoAV1MTW"
-        : simd
-        ? "ASDecoderVideoAV1SIMDW"
-        : "ASDecoderVideoAV1W"
-    };
-
-    let className = videoClassMap[PayloadType.stringCodec(ptype)];
-    if (!className) {
-      throw Error(`Not found video codec:${ptype}`);
-    }
-
-    this.processing = true;
-    ASLoader.loadClass(
-      className,
-      (videoCodecClass) => {
-        let audioOptions = {};
-        videoCodecClass(audioOptions).then((decoder) => {
-          this.videoDecoder = decoder;
-          decoder.init(() => {
-            this.loadedVideoMetadata = decoder.loadedMetadata;
-            this.processing = false;
-            callback();
+        }
+        break;
+      case "getMediaLength":
+        {
+          let r = proxy._getMediaLength();
+          postMessage({
+            method: "getMediaLength",
+            result: r
           });
-        });
-      },
-      {
-        work: this.options.work && !this.options.threading
-      }
-    );
-  }
+        }
+        break;
+      case "onSupportedMSE":
+        proxy.isReceviceMSE = true;
+        proxy.useMSE = event.data.params.result;
+        break;
+      default:
+        break;
+    }
+  };
 }
-onmessage = (event) => {
-  switch (event.data.method) {
-    case "load":
-      if (!proxy) {
-        proxy = new RTSPStreamWork(event.data.options);
-      }
-      proxy.load(event.data.params.url);
-      break;
-    case "getCacheLength":
-      {
-        let r = proxy._getCacheLength();
-        postMessage({
-          method: "getCacheLength",
-          result: r
-        });
-      }
-      break;
-    case "getMediaLength":
-      {
-        let r = proxy._getMediaLength();
-        postMessage({
-          method: "getMediaLength",
-          result: r
-        });
-      }
-      break;
-    case "onSupportedMSE":
-      proxy.isReceviceMSE = true;
-      proxy.useMSE = event.data.params.result;
-      break;
-    default:
-      break;
-  }
-};
