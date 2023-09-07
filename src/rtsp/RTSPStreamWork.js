@@ -20,11 +20,6 @@ class RTSPStreamWork {
     this.remux = null;
     this.isContainer = false;
 
-    /// Decoder
-    this.videoDecoder = null;
-    this.audioDecoder = null;
-    this.loadedMetadata = false;
-
     /// events binds
     this._onTracks = this.onTracks.bind(this);
     this._onTsTracks = this.onTsTracks.bind(this);
