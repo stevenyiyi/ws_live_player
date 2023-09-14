@@ -15,8 +15,6 @@ class RTSPStreamWork {
     this.firstRAP = false;
     this.tracks = null;
     this.client = null;
-    this.isReceviceMSE = false;
-    this.useMSE = false;
     this.isContainer = false;
 
     /// events binds
@@ -57,6 +55,11 @@ class RTSPStreamWork {
     this.client.setSource(url);
     this.buffering = true;
     this.client.start();
+  }
+
+  seek(postion) {
+    /// RTSP seek to postion
+    this.client.seek(postion);
   }
 
   stop() {
@@ -216,21 +219,18 @@ class RTSPStreamWork {
     ) {
       this.lastKeyframeTimestamp = accessunit.pts;
     }
-    if (this.isReceviceMSE) {
-      if (this.useMSE) {
-        track.sampleQueue.push(accessunit);
-        let sample = track.sampleQueue.shift();
-        while (sample) {
-          postMessage(
-            {
-              event: "onSamples",
-              samples: sample
-            },
-            [sample]
-          );
-          sample = track.sampleQueue.shift();
-        }
-      }
+
+    track.sampleQueue.push(accessunit);
+    let sample = track.sampleQueue.shift();
+    while (sample) {
+      postMessage(
+        {
+          event: "onSamples",
+          samples: sample
+        },
+        [sample]
+      );
+      sample = track.sampleQueue.shift();
     }
   }
 
@@ -368,6 +368,11 @@ class RTSPStreamWork {
         }
         proxy.load(event.data.params.url);
         break;
+      case "seek":
+        if (proxy) {
+          proxy.seek(event.data.params.postion);
+        }
+        break;
       case "stop":
         if (proxy) proxy.stop();
         break;
@@ -391,10 +396,6 @@ class RTSPStreamWork {
             result: r
           });
         }
-        break;
-      case "onSupportedMSE":
-        proxy.isReceviceMSE = true;
-        proxy.useMSE = event.data.params.result;
         break;
       default:
         break;

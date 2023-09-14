@@ -80,6 +80,11 @@ export default class RTSPStream extends BaseStream {
     this.buffering = true;
   }
 
+  /// return Promise
+  seek(offset) {
+    this.work.postMessage({ method: "seek", params: { postion: offset } });
+  }
+
   abort() {
     this.work.postMessage({
       method: "abort"

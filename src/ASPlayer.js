@@ -43,21 +43,8 @@ export class ASPlayer {
     this._video.addEventListener(
       "seeking",
       () => {
-        if (this._video.buffered.length) {
-          let bStart = this._video.buffered.start(0);
-          let bEnd = this._video.buffered.end(0);
-          let bDuration = bEnd - bStart;
-
-          if (
-            bDuration > 0 &&
-            (this._video.currentTime < bStart || this.player.currentTime > bEnd)
-          ) {
-            if (this._video.currentTime < bStart) {
-              this._video.currentTime = bStart;
-            } else {
-              this._video.currentTime = bEnd - 1;
-            }
-          }
+        if (!this._is_in_buffered(this._video.currentTime)) {
+          this.stream.seek(this._video.currentTime);
         }
       },
       false
@@ -92,5 +79,20 @@ export class ASPlayer {
   /** stop */
   stop() {
     this.stream.stop();
+  }
+
+  _is_in_buffered(current_time) {
+    let buffereds = this._video.buffered;
+    let f = false;
+    for (let i = 0; i < buffereds.length; i++) {
+      if (
+        current_time >= buffereds[i].start(0) &&
+        current_time <= buffereds[i].end(0)
+      ) {
+        f = true;
+        break;
+      }
+    }
+    return f;
   }
 }

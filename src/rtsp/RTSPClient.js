@@ -58,7 +58,7 @@ export default class RTSPClient extends BaseClient {
   }
 
   start() {
-    super.start();
+    super.start(0);
     if (this.transport) {
       return this.transport.ready.then(() => {
         return this.clientSM.start();
@@ -66,6 +66,10 @@ export default class RTSPClient extends BaseClient {
     } else {
       return Promise.reject("no transport attached");
     }
+  }
+
+  seek(timeOffset) {
+    return this.clientSM.start(timeOffset);
   }
 
   stop() {
@@ -91,6 +95,13 @@ export default class RTSPClient extends BaseClient {
     this.clientSM.onDisconnected();
   }
 
+  useRTPChannel(channel) {
+    this.rtp_channels.add(channel);
+  }
+
+  forgetRTPChannel(channel) {
+    this.rtp_channels.delete(channel);
+  }
   /// Private
   _getDuration() {
     let d = NaN;
@@ -233,14 +244,14 @@ export class RTSPClientSM extends StateMachine {
     await this.transitionTo(RTSPClientSM.STATE_INITIAL);
   }
 
-  start() {
+  start(pos) {
     if (this.currentState.name !== RTSPClientSM.STATE_STREAMS) {
       return this.transitionTo(RTSPClientSM.STATE_OPTIONS);
     } else {
-      // TODO: seekable
+      // TODO: seekableß
       let promises = [];
       for (let session in this.sessions) {
-        promises.push(this.sessions[session].sendPlay());
+        promises.push(this.sessions[session].sendPlay(pos));
       }
       return Promise.all(promises);
     }
@@ -264,14 +275,6 @@ export class RTSPClientSM extends StateMachine {
     if (this.rtp_channels.has(channel)) {
       this.onRTP({ packet: data.subarray(4), type: channel });
     }
-  }
-
-  useRTPChannel(channel) {
-    this.rtp_channels.add(channel);
-  }
-
-  forgetRTPChannel(channel) {
-    this.rtp_channels.delete(channel);
   }
 
   stop() {
