@@ -17,7 +17,6 @@ class RTSPStreamWork {
     this.client = null;
     this.isReceviceMSE = false;
     this.useMSE = false;
-    this.remux = null;
     this.isContainer = false;
 
     /// events binds
@@ -39,7 +38,7 @@ class RTSPStreamWork {
     this.firstVideoPts = -1;
     this.lastKeyframeTimestamp = -1;
   }
-
+  /// methods
   load(url) {
     if (!this.client) {
       this.client = new RTSPClient();
@@ -60,6 +59,13 @@ class RTSPStreamWork {
     this.client.start();
   }
 
+  stop() {
+    this.client.stop();
+  }
+
+  destory() {
+    this.client.destory();
+  }
   /// events
   onTracks(tracks) {
     this.tracks = tracks;
@@ -361,6 +367,12 @@ class RTSPStreamWork {
           proxy = new RTSPStreamWork(event.data.options);
         }
         proxy.load(event.data.params.url);
+        break;
+      case "stop":
+        if (proxy) proxy.stop();
+        break;
+      case "destory":
+        if (proxy) proxy.destory();
         break;
       case "getCacheLength":
         {

@@ -399,7 +399,7 @@ export class RTSPClientSM extends StateMachine {
           try {
             await this.parent.queryCredentials.call(this.parent);
           } catch (e) {
-            throw new AuthError();
+            throw new AuthError(e.message);
           }
         }
 

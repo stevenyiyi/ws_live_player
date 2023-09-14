@@ -86,6 +86,14 @@ export default class RTSPStream extends BaseStream {
     });
   }
 
+  stop() {
+    this.work.postMessage({ method: "stop" });
+  }
+
+  destory() {
+    this.work.postMessage({ method: "destory" });
+  }
+
   /// events
   onTracks(tracks) {
     Log.log(tracks);
