@@ -60,6 +60,16 @@ export default class BaseStream {
     throw Error("Call seek in abstract class!");
   }
 
+  /// stop
+  stop() {
+    throw Error("Call stop in abstract class!");
+  }
+
+  /// destory
+  destory() {
+    throw Error("Call destory in abstract class!");
+  }
+
   /// Array of array [[s, e],...]
   getBufferedRanges() {
     /// Inherite class implement

@@ -59,16 +59,31 @@ class RTSPStreamWork {
 
   seek(postion) {
     /// RTSP seek to postion
-    this.client.seek(postion);
+    this.client.seek(postion).then(() => {
+      postMessage({ event: "onSeek" });
+    });
   }
 
   stop() {
-    this.client.stop();
+    this.client.stop().then(() => {
+      if (this.client.transport) {
+        this.client.transport.disconnect().then(() => {
+          postMessage({ event: "onStop" });
+        });
+      } else {
+        postMessage({
+          event: "onError",
+          error: Error("RTSP Stream stop, but not attached transport!")
+        });
+      }
+    });
   }
 
   destory() {
     this.client.destory();
+    postMessage({ event: "onDestory" });
   }
+
   /// events
   onTracks(tracks) {
     this.tracks = tracks;
@@ -129,6 +144,10 @@ class RTSPStreamWork {
     if (!this.firstRAP) {
       /// Drop accessunit ...
       Log.error("Receive accessunit, but not found track!");
+      postMessage({
+        event: "onError",
+        error: Error("Receive accessunit, but not found track!")
+      });
       return;
     }
 

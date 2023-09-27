@@ -11,6 +11,7 @@ export class BaseClient extends TinyEvents {
       paused: { value: true, writable: true },
       seekable: { value: false, writable: true },
       connected: { value: false, writable: true },
+      transport: { value: null, writable: true },
       duration: function getDuration() {
         return this._getDuration();
       }
