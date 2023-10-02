@@ -66,9 +66,15 @@ class RTSPStreamWork {
 
   stop() {
     this.client.stop().then(() => {
+      postMessage({ event: "onStop" });
+    });
+  }
+
+  abort() {
+    this.client.stop().then(() => {
       if (this.client.transport) {
         this.client.transport.disconnect().then(() => {
-          postMessage({ event: "onStop" });
+          postMessage({ event: "onAbort" });
         });
       } else {
         postMessage({
@@ -394,6 +400,9 @@ class RTSPStreamWork {
         break;
       case "stop":
         if (proxy) proxy.stop();
+        break;
+      case "abort":
+        if (proxy) proxy.abort();
         break;
       case "destory":
         if (proxy) proxy.destory();

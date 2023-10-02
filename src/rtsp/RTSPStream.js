@@ -25,6 +25,7 @@ export default class RTSPStream extends BaseStream {
     this.loadedAllMetadata = false;
 
     this.onseek = null;
+    this.promises = {};
 
     this.audioBuffers = [];
     this.videoBuffers = [];
@@ -64,6 +65,13 @@ export default class RTSPStream extends BaseStream {
         this.onDisconnect();
       } else if (event.data.event === "onClear") {
         this.onClear();
+      } else if (event.data.event === "onStop") {
+        this.promises["onStop"].resolve();
+      } else if (event.data.event === "onDestory") {
+        this.promises["onDestory"].resolve();
+      } else if (event.data.event === "onLoad") {
+        this.promises["onLoad"].resolve();
+      } else if (event.data.event === "onError") {
       }
     };
     return this;
@@ -78,25 +86,40 @@ export default class RTSPStream extends BaseStream {
       params: { wsurl: this.wsurl, rtspurl: url }
     });
     this.buffering = true;
+    return new Promise((resolve, reject) => {
+      this.promises["onLoad"] = { resolve, reject };
+    });
   }
 
   /// return Promise
   seek(offset) {
     this.work.postMessage({ method: "seek", params: { postion: offset } });
+    return new Promise((resolve, reject) => {
+      this.promises["onSeesk"] = { resolve, reject };
+    });
   }
 
   abort() {
     this.work.postMessage({
       method: "abort"
     });
+    return new Promise((resolve, reject) => {
+      this.promises["onAbort"] = { resolve, reject };
+    });
   }
 
   stop() {
     this.work.postMessage({ method: "stop" });
+    return new Promise((resolve, reject) => {
+      this.promises["onStop"] = { resolve, reject };
+    });
   }
 
   destory() {
     this.work.postMessage({ method: "destory" });
+    return new Promise((resolve, reject) => {
+      this.promises["onDestory"] = { resolve, reject };
+    });
   }
 
   /// events

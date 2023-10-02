@@ -33,7 +33,7 @@ export class ASPlayer {
     this._video.addEventListener(
       "pause",
       () => {
-        this.client.stop();
+        this.stream.stop();
         this.continuousRecording.pause(true);
         this.eventRecording.pause(true);
       },
@@ -53,9 +53,7 @@ export class ASPlayer {
     this._video.addEventListener(
       "abort",
       () => {
-        // disconnect the transport when the player is closed
-        this.stream.stop();
-        this.transport.disconnect().then(() => {
+        this.stream.abort().then(() => {
           this.stream.destroy();
         });
       },

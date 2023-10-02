@@ -371,7 +371,7 @@ export class RTSPClientSM extends StateMachine {
         if (result === 0) {
           this.promises[this.cSeq] = { resovle, reject };
         } else {
-          reject(new Error("WS send data error!"));
+          reject(Error("WS send data error!"));
         }
       });
     });
