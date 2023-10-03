@@ -3,7 +3,6 @@ import RTSPStream from "./rtsp/RTSPStream";
 export class ASPlayer {
   constructor() {
     // Always call super first in constructor
-    super();
     this._video = null;
     this.errorHandler = null;
     this.infoHandler = null;
@@ -20,9 +19,6 @@ export class ASPlayer {
     this._video.addEventListener(
       "play",
       () => {
-        this.continuousRecording.pause(false);
-        this.eventRecording.pause(false);
-
         if (!this.isPlaying()) {
           this.client.start();
         }
@@ -34,8 +30,6 @@ export class ASPlayer {
       "pause",
       () => {
         this.stream.stop();
-        this.continuousRecording.pause(true);
-        this.eventRecording.pause(true);
       },
       false
     );

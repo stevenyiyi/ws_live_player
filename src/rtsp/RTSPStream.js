@@ -1,5 +1,5 @@
 import { getTagged } from "../utils/logger.js";
-import { BaseStream } from "../BaseStream.js";
+import BaseStream from "../BaseStream.js";
 import { PayloadType } from "../StreamDefine.js";
 import { Remuxer } from "../remuxer/remuxer.js";
 import { MSE } from "../presentation/mse.js";

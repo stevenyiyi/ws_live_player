@@ -1,4 +1,4 @@
-import { EventEmitter } from "util/event.js";
+import { EventEmitter } from "./utils/event.js";
 export default class BaseStream {
   constructor(options) {
     this.eventSource = new EventEmitter();

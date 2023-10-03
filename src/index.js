@@ -1,12 +1,11 @@
 import "./styles.css";
+import { ASPlayer } from "./ASPlayer";
 document.getElementById("app").innerHTML = `
-<h1>Hello Vanilla!</h1>
-<div>
-  We use the same configuration as Parcel to bundle this sandbox, you can find more
-  info about Parcel 
-  <p id="idts">Current time is:</p>
-  <a href="https://parceljs.org" target="_blank" rel="noopener noreferrer">here</a>.
-</div>
+<h1>rtsp player</h1>
+<video id="test_video" controls autoplay>
+    <!--<source src="rtsp://192.168.10.205:554/ch01.264" type="application/x-rtsp">-->
+    <!--<source src="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov" type="application/x-rtsp">-->
+</video>
 `;
-let t = document.getElementById("idts");
-t.innerHTML += window.performance.now();
+let video = document.getElementById("test_video");
+video.innerHTML += window.performance.now();
