@@ -8,4 +8,4 @@ document.getElementById("app").innerHTML = `
 </video>
 `;
 let video = document.getElementById("test_video");
-video.innerHTML += window.performance.now();
+let player = new ASPlayer({ wsurl: "ws://localhost/live", cacheSize: 1000 });

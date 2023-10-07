@@ -14,11 +14,9 @@ export default class RTSPStream extends BaseStream {
     this.useMSE = false;
     this.remux = null;
     this.isContainer = false;
-    this.hasBFrames = false;
 
     this.loadedMetadata = false;
     this.processingTimer = 0;
-    this.flushIter = 0;
 
     this.loadedAudioMetadata = false;
     this.loadedVideoMetadata = false;

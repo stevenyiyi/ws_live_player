@@ -6,7 +6,6 @@ export default class BaseStream {
     this.wsurl = options.wsurl;
     this.video = options.video;
 
-    this._canvas = options.canvas;
     this._frameSink = options.frameSink;
 
     this._videoTrack = null;
