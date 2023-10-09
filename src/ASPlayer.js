@@ -3,17 +3,17 @@ import RTSPStream from "./rtsp/RTSPStream";
 export class ASPlayer {
   constructor(options) {
     // Always call super first in constructor
-    this._video = null;
     this.errorHandler = null;
     this.infoHandler = null;
     this.dataHandler = null;
     this.queryCredentials = null;
     this.bufferDuration_ = 120;
     this.stream = new RTSPStream(options);
+    this._attachVideo(options.video);
   }
 
   /** video play handler */
-  attachVideo(video) {
+  _attachVideo(video) {
     this._video = video;
     this._video.addEventListener(
       "play",
