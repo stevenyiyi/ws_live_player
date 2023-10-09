@@ -1,4 +1,5 @@
 import { getTagged } from "../utils/logger.js";
+import { Url } from "./utils/url.js";
 import { StateMachine } from "../utils/statemachine.js";
 import { SDPParser } from "./sdp.js";
 import { RTSPTrackStream } from "./RTSPTrackStream.js";
@@ -16,7 +17,7 @@ const LOG_TAG = "client:rtsp";
 const Log = getTagged(LOG_TAG);
 
 export default class RTSPClient extends BaseClient {
-  constructor(options = { flush: 200 }) {
+  constructor(options) {
     super(options);
     this.clientSM = new RTSPClientSM(this);
     this.awaitingPromises = {};
@@ -224,8 +225,8 @@ export class RTSPClientSM extends StateMachine {
 
   setSource(url) {
     this.reset();
-    this.endpoint = url;
-    this.url = `${url.protocol}://${url.location}${url.urlpath}`;
+    this.endpoint = Url.parse(url);
+    this.url = `${this.endpoint.protocol}://${this.endpoint.location}${this.endpoint.urlpath}`;
   }
 
   onConnected() {

@@ -8,4 +8,8 @@ document.getElementById("app").innerHTML = `
 </video>
 `;
 let video = document.getElementById("test_video");
-let player = new ASPlayer({ wsurl: "ws://localhost/live", cacheSize: 1000 });
+let player = new ASPlayer({
+  wsurl: "ws://localhost/live",
+  rtspurl: "rtsp://localhost:8554/live/50011200121328555763",
+  cacheSize: 1000
+});

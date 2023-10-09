@@ -1,4 +1,5 @@
 import { Log } from "./utils/logger.js";
+import { Url } from "./utils/url.js";
 import { TinyEvents } from "./utils/event.js";
 
 export class BaseClient extends TinyEvents {
@@ -81,8 +82,8 @@ export class BaseClient extends TinyEvents {
 
   setSource(source) {
     this.stop();
-    this.endpoint = source;
-    this.sourceUrl = source.urlpath;
+    this.endpoint = Url.parse(source);
+    this.sourceUrl = this.endpoint.urlpath;
   }
 
   startStreamFlush() {

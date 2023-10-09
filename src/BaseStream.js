@@ -4,6 +4,7 @@ export default class BaseStream {
     this.eventSource = new EventEmitter();
     this.cacheSize = options.cacheSize || 500; //default ms
     this.wsurl = options.wsurl;
+    this.rtspurl = options.rtspurl;
     this.video = options.video;
 
     this._frameSink = options.frameSink;
@@ -48,7 +49,7 @@ export default class BaseStream {
   /// Public methods
 
   /// return Promise
-  load(url) {
+  load() {
     /// Inherite class implement
     throw Error("Call load in abstract class!");
   }

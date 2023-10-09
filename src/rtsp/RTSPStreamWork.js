@@ -37,12 +37,14 @@ class RTSPStreamWork {
     this.lastKeyframeTimestamp = -1;
   }
   /// methods
-  load(url) {
+  load() {
     if (!this.client) {
-      this.client = new RTSPClient();
-      let transport = new WebsocketTransport(url, "rtsp", {
-        socket: this.wsurl
-      });
+      this.client = new RTSPClient(this.options);
+      let transport = new WebsocketTransport(
+        this.options.wsurl,
+        "rtsp",
+        "rtsp"
+      );
       this.client.attachTransport(transport);
       this.client.on("tracks", this._onTracks);
       this.client.on("tstracks", this._onTsTracks);
@@ -52,7 +54,7 @@ class RTSPStreamWork {
     } else {
       this.client.reset();
     }
-    this.client.setSource(url);
+    this.client.setSource(this.options.rtspurl);
     this.buffering = true;
     this.client.start();
   }
@@ -391,7 +393,7 @@ class RTSPStreamWork {
         if (!proxy) {
           proxy = new RTSPStreamWork(event.data.options);
         }
-        proxy.load(event.data.params.url);
+        proxy.load();
         break;
       case "seek":
         if (proxy) {

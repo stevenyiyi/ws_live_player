@@ -78,10 +78,10 @@ export default class RTSPStream extends BaseStream {
   /// Public methods
 
   /// Override method, return Promise
-  load(url) {
+  load() {
     this.work.postMessage({
       method: "load",
-      params: { wsurl: this.wsurl, rtspurl: url }
+      params: { options: this.options }
     });
     this.buffering = true;
     return new Promise((resolve, reject) => {

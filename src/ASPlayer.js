@@ -9,7 +9,6 @@ export class ASPlayer {
     this.dataHandler = null;
     this.queryCredentials = null;
     this.bufferDuration_ = 120;
-    this.url = null;
     this.stream = new RTSPStream(options);
   }
 
@@ -20,7 +19,7 @@ export class ASPlayer {
       "play",
       () => {
         if (!this.isPlaying()) {
-          this.client.start();
+          this.stream.start();
         }
       },
       false
@@ -63,8 +62,7 @@ export class ASPlayer {
   /** Load */
   start(url) {
     if (this.stream) {
-      this.url = url;
-      this.stream.load(this.url);
+      this.stream.load();
     }
   }
 
