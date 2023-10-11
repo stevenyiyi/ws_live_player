@@ -14,3 +14,4 @@ let player = new ASPlayer({
   cacheSize: 1000,
   video: video
 });
+player.start();

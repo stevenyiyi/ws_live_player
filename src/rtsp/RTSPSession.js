@@ -1,7 +1,7 @@
-import { getTagged } from "utils/logger.js";
+import { getTagged } from "../utils/logger.js";
 
 import { RTSPClientSM as RTSPClient } from "./RTSPClient.js";
-import { Url } from "utils/url.js";
+import { Url } from "../utils/url.js";
 import { RTSPError } from "./RTSPClient.js";
 
 const LOG_TAG = "rtsp:session";

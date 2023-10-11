@@ -1,4 +1,4 @@
-import { appendByteArray } from "../util/binary.js";
+import { appendByteArray } from "../utils/binary.js";
 
 export class PESAsm {
   constructor() {

@@ -1,5 +1,5 @@
 import { AudioFrame } from "./audio-frame.js";
-import { BitArray } from "../util/binary";
+import { BitArray } from "../utils/binary";
 
 // TODO: asm.js
 export class AACAsm {

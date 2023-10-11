@@ -1,4 +1,4 @@
-import { BitArray } from "../util/binary.js";
+import { BitArray } from "../utils/binary.js";
 import { PESAsm } from "./pes.js";
 import { H26XPES } from "./pes_h26x.js";
 import { AACPES } from "./pes_aac.js";

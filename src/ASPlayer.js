@@ -60,7 +60,7 @@ export class ASPlayer {
   }
 
   /** Load */
-  start(url) {
+  start() {
     if (this.stream) {
       this.stream.load();
     }

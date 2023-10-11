@@ -3,9 +3,13 @@ import BaseStream from "../BaseStream.js";
 import { PayloadType } from "../StreamDefine.js";
 import { Remuxer } from "../remuxer/remuxer.js";
 import { MSE } from "../presentation/mse.js";
-
+import { RTSPClient } from "./RTSPClient";
+import { WebsocketTransport } from "../websocket";
+import { H264Parser } from "../parsers/h264.js";
+import { H265Parser } from "../parsers/h265.js";
 const LOG_TAG = "RTSPStream";
 const Log = getTagged(LOG_TAG);
+
 export default class RTSPStream extends BaseStream {
   constructor(options) {
     super(options);
@@ -35,43 +39,6 @@ export default class RTSPStream extends BaseStream {
     this.lastKeyframeTimestamp = -1;
     this.firstPlaying = false;
 
-    this.work = new Worker("RTSPStreamWork.js");
-    this.work.onmessage = (event) => {
-      if (event.data.event === "onTracks") {
-        this.seekable = event.data.seekable;
-        this.duration = event.data.duration;
-        this.onTracks(event.data.tracks);
-      } else if (event.data.event === "onTsTracks") {
-        this.seekable = event.data.seekable;
-        this.duration = event.data.duration;
-        this.onTsTracks(event.data.tracks);
-      } else if (event.data.event === "onSamples") {
-        this.onSample(event.data.samples);
-      } else if (event.data.event === "onAudioBuffer") {
-        this.onAudioBuffer({
-          pts: event.data.pts,
-          dts: event.data.dts,
-          sample: event.data.sample
-        });
-      } else if (event.data.event === "onFrameBuffer") {
-        this.onFrameBuffer({
-          pts: event.data.pts,
-          dts: event.data.dts,
-          sample: event.data.sample
-        });
-      } else if (event.data.event === "onDisconnect") {
-        this.onDisconnect();
-      } else if (event.data.event === "onClear") {
-        this.onClear();
-      } else if (event.data.event === "onStop") {
-        this.promises["onStop"].resolve();
-      } else if (event.data.event === "onDestory") {
-        this.promises["onDestory"].resolve();
-      } else if (event.data.event === "onLoad") {
-        this.promises["onLoad"].resolve();
-      } else if (event.data.event === "onError") {
-      }
-    };
     return this;
   }
 
@@ -79,45 +46,46 @@ export default class RTSPStream extends BaseStream {
 
   /// Override method, return Promise
   load() {
-    this.work.postMessage({
-      method: "load",
-      params: { options: this.options }
-    });
+    Log.log("load starting!");
+    if (!this.client) {
+      this.client = new RTSPClient(this.options);
+      let transport = new WebsocketTransport(this.wsurl, "rtsp", "rtsp");
+      this.client.attachTransport(transport);
+      this.client.on("tracks", this._onTracks);
+      this.client.on("tstracks", this._onTsTracks);
+      this.client.on("sample", this._onSample);
+      this.client.on("clear", this._onClear);
+      this.client.on("disconnect", this._onDisconnect);
+    } else {
+      this.client.reset();
+    }
+    this.client.setSource(this.rtspurl);
     this.buffering = true;
-    return new Promise((resolve, reject) => {
-      this.promises["onLoad"] = { resolve, reject };
-    });
+    this.client.start();
   }
 
   /// return Promise
   seek(offset) {
-    this.work.postMessage({ method: "seek", params: { postion: offset } });
-    return new Promise((resolve, reject) => {
-      this.promises["onSeesk"] = { resolve, reject };
-    });
+    /// RTSP seek to postion
+    return this.client.seek(offset);
   }
 
   abort() {
-    this.work.postMessage({
-      method: "abort"
-    });
-    return new Promise((resolve, reject) => {
-      this.promises["onAbort"] = { resolve, reject };
+    this.client.stop().then(() => {
+      if (this.client.transport) {
+        return this.client.transport.disconnect();
+      } else {
+        throw Error("abort stream, but transport is null!");
+      }
     });
   }
 
   stop() {
-    this.work.postMessage({ method: "stop" });
-    return new Promise((resolve, reject) => {
-      this.promises["onStop"] = { resolve, reject };
-    });
+    return this.client.stop();
   }
 
   destory() {
-    this.work.postMessage({ method: "destory" });
-    return new Promise((resolve, reject) => {
-      this.promises["onDestory"] = { resolve, reject };
-    });
+    this.client.destory();
   }
 
   /// events
@@ -130,12 +98,11 @@ export default class RTSPStream extends BaseStream {
     ) {
       this.isContainer = true;
     } else {
+      this.isContainer = false;
       this.hasBFrames = this._getHasBFrames();
+      this.seekable = this.client.seekable;
+      this.duration = this.client.duration;
       this._decideMSE();
-      this.work.postMessage({
-        method: "onSupportedMSE",
-        params: { result: this.useMSE }
-      });
       if (this.useMSE) {
         this.eventSource.dispatchEvent("tracks", tracks);
       } else {
@@ -145,23 +112,142 @@ export default class RTSPStream extends BaseStream {
   }
 
   onTsTracks(tracks) {
+    /** add duration\track\offset properties*/
+    for (const track of tracks) {
+      track.duration = this.tracks[0].duration;
+      track.track = this.tracks[0].track;
+      track.offset = this.tracks[0].offset;
+    }
     this.tracks[0].tracks = tracks;
-    this.hasBFrames = this._getHasBFrames();
-    this._decideMSE();
-    this.work.postMessage({
-      method: "onSupportedMSE",
-      params: { result: this.useMSE }
-    });
-    if (this.useMSE) {
-      this.eventSource.dispatchEvent("tracks", tracks);
-    } else {
-      this.eventSource.dispatchEvent("loadedmetadata");
+
+    let hasCodecConf = false;
+    for (const track of tracks) {
+      if (track.hasCodecConf) {
+        hasCodecConf = true;
+        break;
+      }
+    }
+
+    if (!hasCodecConf) {
+      this.seekable = this.client.seekable;
+      this.duration = this.client.duration;
+      this.hasBFrames = this._getHasBFrames();
+
+      this._decideMSE();
+
+      if (this.useMSE) {
+        this.eventSource.dispatchEvent("tracks", tracks);
+      } else {
+        this.eventSource.dispatchEvent("loadedmetadata");
+      }
     }
   }
 
   /// MSE  accessunit event notify
   onSample(accessunit) {
-    this.eventSource.dispatchEvent("sample", accessunit);
+    if (
+      accessunit.ctype === PayloadType.H264 ||
+      accessunit.ctype === PayloadType.H265
+    ) {
+      if (!this.firstRAP && accessunit.isKeyFrame()) {
+        this.firstRAP = true;
+      }
+    }
+
+    if (!this.firstRAP) {
+      /// Drop accessunit ...
+      Log.error("Receive accessunit, but not found track!");
+      return;
+    }
+    let track = null;
+    /// Find track
+    if (
+      this.tracks[0].type === PayloadType.TS ||
+      this.tracks[0].type === PayloadType.PS
+    ) {
+      for (const t of this.tracks[0].tracks) {
+        if (t.type === accessunit.ctype) {
+          track = t;
+          break;
+        }
+      }
+    } else {
+      for (const t of this.tracks) {
+        if (t.type === accessunit.ctype) {
+          track = t;
+          break;
+        }
+      }
+    }
+
+    if (!track) {
+      Log.error("Receive accessunit, but not found track!");
+      return;
+    }
+
+    if (track.type === PayloadType.H264 && (!track.sps || !track.pps)) {
+      if (!track.parser) {
+        track.parser = new H264Parser(track);
+      }
+      for (const frame of accessunit.units) {
+        track.parser.parseNAL(frame);
+      }
+      if (track.sps && track.pps) {
+        track.ready = true;
+      }
+    } else if (
+      track.type === PayloadType.H265 &&
+      (!track.vps || !track.sps || !track.pps)
+    ) {
+      if (!track.parser) {
+        track.parser = new H265Parser(track);
+      }
+      for (const frame of accessunit.units) {
+        track.parser.parseNAL(frame);
+      }
+      if (track.vps && track.sps && track.pps) {
+        track.ready = true;
+      }
+    } else if (track.type === PayloadType.AAC && !track.config) {
+      if (!accessunit.config) {
+        throw new Error(
+          "Receive aac accessunit, but have not config information!"
+        );
+      }
+      track.config = accessunit.config;
+      track.ready = true;
+    }
+
+    /// Check TS/PS container tracks ready
+    if (this.isContainer) {
+      let f = true;
+      const tracks = this.tracks[0].tracks;
+      for (const t of tracks) {
+        f = !!t.ready;
+      }
+      if (f) {
+        this.onTsTracks(tracks);
+      }
+    }
+
+    if (this.firstVideoPts === -1 && track.type === "video") {
+      this.firstVideoPts = accessunit.pts;
+    } else if (this.firstAudioPts === -1 && track.type === "audio") {
+      this.firstAudioPts = accessunit.pts;
+    }
+    if (
+      accessunit.ctype === PayloadType.H264 ||
+      (accessunit.ctype === PayloadType.H265 && accessunit.isKeyFrame())
+    ) {
+      this.lastKeyframeTimestamp = accessunit.pts;
+    }
+
+    track.sampleQueue.push(accessunit);
+    let sample = track.sampleQueue.shift();
+    while (sample) {
+      this.eventSource.dispatchEvent("sample", sample);
+      sample = track.sampleQueue.shift();
+    }
   }
 
   onClear() {
