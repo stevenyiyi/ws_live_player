@@ -82,7 +82,7 @@ export class WebsocketTransport extends TinyEvents {
     Log.log("WebSocket reconnect...");
     let time = this._generateInterval(this.attempts);
     this.timeoutID = setTimeout(() => {
-      this.attempts = this.state.attempts + 1;
+      this.attempts = this.attempts + 1;
       let subprotos = this.protocols.split(",");
       this.ws = new WebSocket(this.wsurl, subprotos);
       this._setupWebsocket();
