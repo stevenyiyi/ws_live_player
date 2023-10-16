@@ -20,7 +20,6 @@ export class RTSPClient extends BaseClient {
   constructor(options) {
     super(options);
     this.clientSM = new RTSPClientSM(this);
-    this.awaitingPromises = {};
     this.clientSM.ontracks = (tracks) => {
       this.emit("tracks", tracks);
     };
@@ -178,6 +177,7 @@ export class RTSPClientSM extends StateMachine {
     this.sessions = {};
     this.ontracks = null;
     this.ontstracks = null;
+    this.promises = {};
     this.payParser.ontracks = (tracks) => {
       this.ontstracks(tracks);
     };
@@ -265,11 +265,12 @@ export class RTSPClientSM extends StateMachine {
   onControl(data) {
     /// Parse CSeq
     let parsed = this.parse(data);
+    Log.log(parsed);
     let cseq = parsed.headers["cseq"];
     if (cseq) {
       this.promises[Number(cseq)].resovle(parsed);
     } else {
-      this.promises[cseq].reject(
+      this.promises[Number(cseq)].reject(
         new Error("Not found CSeq in RTSP response header!")
       );
     }
@@ -375,6 +376,7 @@ export class RTSPClientSM extends StateMachine {
       this.transport.send(_data, (result) => {
         if (result === 0) {
           this.promises[this.cSeq] = { resovle, reject };
+          Log.log(`send data success,cseq:${this.cSeq}`);
         } else {
           reject(Error("WS send data error!"));
         }

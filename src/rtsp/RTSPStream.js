@@ -39,7 +39,12 @@ export default class RTSPStream extends BaseStream {
     this.lastKeyframeTimestamp = -1;
     this.firstPlaying = false;
 
-    return this;
+    /// Events
+    this._onTracks = this.onTracks.bind(this);
+    this._onTsTracks = this.onTsTracks.bind(this);
+    this._onSample = this.onSample.bind(this);
+    this._onClear = this.onClear.bind(this);
+    this._onDisconnect = this.onDisconnect.bind(this);
   }
 
   /// Public methods

@@ -32,8 +32,11 @@ export class BaseClient extends TinyEvents {
         this.onData(data);
       }
     };
-    this._onConnect = this.onConnected.bind(this);
+    this._onConnected = this.onConnected.bind(this);
     this._onDisconnect = this.onDisconnected.bind(this);
+    this._onData = this.onData.bind(this);
+    this._onControl = this.onControl.bind(this);
+    this._onJabber = this.onJabber.bind(this);
   }
 
   static streamType() {
@@ -52,7 +55,7 @@ export class BaseClient extends TinyEvents {
     this.transport.on("control", this._onControl);
     this.transport.on("jabber", this._onJabber);
     this.transport.on("data", this._onData);
-    this.transport.on("connected", this._onConnect);
+    this.transport.on("connected", this._onConnected);
     this.transport.on("disconnected", this._onDisconnect);
   }
 
