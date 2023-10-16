@@ -104,7 +104,6 @@ export class BaseClient extends TinyEvents {
 
   onConnected() {
     if (!this.seekable) {
-      this.transport.dataQueue = [];
       this.emit("clear");
     }
     this.connected = true;

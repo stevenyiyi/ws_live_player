@@ -64,7 +64,7 @@ export class RTSPClient extends BaseClient {
       if (this.connected) {
         Promise.resolve();
       } else {
-        return this.transport.connect(() => {
+        this.transport.connect(() => {
           return this.clientSM.start();
         });
       }
@@ -237,9 +237,9 @@ export class RTSPClientSM extends StateMachine {
     if (this.rtpFactory) {
       this.rtpFactory = null;
     }
-    if (this.shouldReconnect) {
-      this.start();
-    }
+    // if (this.shouldReconnect) {
+    this.start();
+    //}
   }
 
   async onDisconnected() {

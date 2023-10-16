@@ -102,7 +102,7 @@ export class WebsocketTransport extends TinyEvents {
     this.disconnect().then(() => {
       let subprotos = this.protocols.split(",");
       this.ws = new WebSocket(this.socket_url, subprotos);
-      Promise.resolve();
+      this._setupWebsocket(this.ws);
     });
   }
 
