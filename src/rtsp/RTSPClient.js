@@ -268,6 +268,7 @@ export class RTSPClientSM extends StateMachine {
     Log.log(parsed);
     let cseq = parsed.headers["cseq"];
     if (cseq) {
+      Log.log(this.promises);
       this.promises[Number(cseq)].resovle(parsed);
     } else {
       this.promises[Number(cseq)].reject(
@@ -373,9 +374,9 @@ export class RTSPClientSM extends StateMachine {
 
   _transportRequest(_data) {
     return new Promise((resovle, reject) => {
+      this.promises[this.cSeq] = { resovle, reject };
       this.transport.send(_data, (result) => {
         if (result === 0) {
-          this.promises[this.cSeq] = { resovle, reject };
           Log.log(`send data success,cseq:${this.cSeq}`);
         } else {
           reject(Error("WS send data error!"));
