@@ -61,7 +61,7 @@ export class BaseClient extends TinyEvents {
       this.transport.off("jabber", this._onJabber);
       this.transport.off("control", this._onData);
       this.transport.off("data", this._onData);
-      this.transport.off("connected", this._onConnect);
+      this.transport.off("connected", this._onConnected);
       this.transport.off("disconnected", this._onDisconnect);
       this.transport = null;
     }

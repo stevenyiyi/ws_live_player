@@ -10,6 +10,7 @@ export class WebsocketTransport extends TinyEvents {
     this.socket_url = url;
     this.protocols = protocols;
     this.attempts = 1;
+    this.timeoutID = 0;
     Object.defineProperties(this, {
       readyState: {
         get: function getReadyState() {
@@ -17,7 +18,7 @@ export class WebsocketTransport extends TinyEvents {
         }
       }
     });
-    this.ready = this.connect();
+    /// this.ready = this.connect();
   }
 
   _setupWebsocket(ws) {
@@ -37,7 +38,7 @@ export class WebsocketTransport extends TinyEvents {
   }
 
   onError(e) {
-    Log.log("WS onerror!");
+    Log.log("WS onerror:", e);
     this.emit("error", e);
   }
 
@@ -84,8 +85,8 @@ export class WebsocketTransport extends TinyEvents {
     this.timeoutID = setTimeout(() => {
       this.attempts = this.attempts + 1;
       let subprotos = this.protocols.split(",");
-      this.ws = new WebSocket(this.wsurl, subprotos);
-      this._setupWebsocket();
+      this.ws = new WebSocket(this.socket_url, subprotos);
+      this._setupWebsocket(this.ws);
     }, time);
   }
 
@@ -98,38 +99,15 @@ export class WebsocketTransport extends TinyEvents {
   }
 
   connect() {
-    return this.disconnect().then(() => {
+    this.disconnect().then(() => {
       let subprotos = this.protocols.split(",");
       this.ws = new WebSocket(this.socket_url, subprotos);
-      this.ws.onopen = (e) => {
-        Log.log(`WS connect ${this.socket_url} success!`);
-        return e;
-      };
-      this.ws.onclose = (e) => {
-        Log.log(`WS onclose, code:${e.code}`);
-        this.emit("disconnected", e);
-        if (
-          e.code !== 1000 &&
-          e.code !== 4000 &&
-          e.code !== 4001 &&
-          e.code !== 4002 &&
-          e.code !== 4003
-        ) {
-          this.reconnect();
-        } else {
-          Promise.reject(e);
-        }
-      };
-      this.ws.onerror = (e) => {
-        Log.log("WS onerror!");
-        this.emit("error", e);
-      };
-      this.ws.onmessage = this.onMessage.bind(this);
+      Promise.resolve();
     });
   }
 
   disconnect() {
-    clearTimeout(this.timeoutID);
+    /// clearTimeout(this.timeoutID);
     return new Promise((resolve) => {
       if (this.ws) {
         this.ws.onclose = (e) => {
@@ -138,7 +116,6 @@ export class WebsocketTransport extends TinyEvents {
         };
         this.ws.close();
       } else {
-        Log.log("closed");
         resolve();
       }
     });

@@ -61,11 +61,15 @@ export class RTSPClient extends BaseClient {
   start() {
     super.start(0);
     if (this.transport) {
-      return this.transport.ready.then(() => {
-        return this.clientSM.start();
-      });
+      if (this.connected) {
+        Promise.resolve();
+      } else {
+        return this.transport.connect(() => {
+          return this.clientSM.start();
+        });
+      }
     } else {
-      return Promise.reject("no transport attached");
+      Promise.reject("no transport attached");
     }
   }
 
