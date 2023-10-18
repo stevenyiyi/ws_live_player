@@ -115,7 +115,7 @@ export class SDPParser {
     }
 
     this.version = matches[1];
-    if (0 !== this.version) {
+    if (0 != this.version) {
       Log.log("Unsupported SDP version:" + this.version);
       return false;
     }
