@@ -45,6 +45,11 @@ export class RTSPTrackStream {
     } else if (Url.isAbsolute(`${sessionBlock.control}${track.control}`)) {
       return `${sessionBlock.control}${track.control}`;
     } else if (Url.isAbsolute(`${this.client.contentBase}${track.control}`)) {
+      /* Check the end of the address for a separator */
+      if (this.client.contentBase[this.client.contentBase.length - 1] !== "/") {
+        return `${this.client.contentBase}/${track.control}`;
+      }
+
       /* Should probably check session level control before this */
       return `${this.client.contentBase}${track.control}`;
     } else {
@@ -106,6 +111,7 @@ export class RTSPTrackStream {
   }
 
   sendSetup(session = null) {
+    Log.log("send setup");
     this.state = RTSPClient.STATE_SETUP;
     this.rtpChannel = this.client.interleaveChannelIndex;
     let interleavedChannels =

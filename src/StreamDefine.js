@@ -98,6 +98,7 @@ export class PayloadType {
       G726: PayloadType.G726,
       G729: PayloadType.G729,
       M2TS: PayloadType.TS,
+      MP2T: PayloadType.TS,
       PS: PayloadType.PS
     };
   }

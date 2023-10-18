@@ -99,13 +99,6 @@ export class RTSPClient extends BaseClient {
     this.clientSM.onDisconnected();
   }
 
-  useRTPChannel(channel) {
-    this.rtp_channels.add(channel);
-  }
-
-  forgetRTPChannel(channel) {
-    this.rtp_channels.delete(channel);
-  }
   /// Private
   _getDuration() {
     let d = NaN;
@@ -268,8 +261,8 @@ export class RTSPClientSM extends StateMachine {
     Log.log(parsed);
     let cseq = parsed.headers["cseq"];
     if (cseq) {
-      Log.log(this.promises);
       this.promises[Number(cseq)].resovle(parsed);
+      delete this.promises[Number(cseq)];
     } else {
       this.promises[Number(cseq)].reject(
         new Error("Not found CSeq in RTSP response header!")
@@ -478,6 +471,14 @@ export class RTSPClientSM extends StateMachine {
     });
   }
 
+  useRTPChannel(channel) {
+    this.rtp_channels.add(channel);
+  }
+
+  forgetRTPChannel(channel) {
+    this.rtp_channels.delete(channel);
+  }
+
   onDescribe(data) {
     this.contentBase = data.headers["content-base"] || this.url;
     this.tracks = this.sdp.getMediaBlockList();
@@ -504,10 +505,12 @@ export class RTSPClientSM extends StateMachine {
     let streams = [];
     let lastPromise = null;
 
+    Log.log(this.sdp);
     // TODO: select first video and first audio tracks
     for (let track_type of this.tracks) {
       Log.log("setup track: " + track_type);
       let track = this.sdp.getMediaBlock(track_type);
+      Log.log(track);
       if (!PayloadType.string_map[track.rtpmap[track.fmt[0]].name]) continue;
 
       this.streams[track_type] = new RTSPTrackStream(this, track);
@@ -517,6 +520,7 @@ export class RTSPClientSM extends StateMachine {
       this.rtpBuffer[track.fmt[0]] = [];
       streams.push(
         setupPromise.then(({ track, data }) => {
+          Log.log(track);
           this.timeOffset[track.fmt[0]] = 0;
           try {
             let rtp_info = data.headers["rtp-info"].split(";");
@@ -533,19 +537,19 @@ export class RTSPClientSM extends StateMachine {
             timescale: 0,
             scaleFactor: 0
           };
-          if (track.fmtp["sprop-parameter-sets"]) {
+          if (track.fmtp && track.fmtp["sprop-parameter-sets"]) {
             let sps_pps = track.fmtp["sprop-parameter-sets"].split(",");
             params = {
               sps: base64ToArrayBuffer(sps_pps[0]),
               pps: base64ToArrayBuffer(sps_pps[1])
             };
-          } else if (track.fmtp["sprop-vps"]) {
+          } else if (track.fmtp && track.fmtp["sprop-vps"]) {
             params.vps = base64ToArrayBuffer(track.fmtp["sprop-vps"]);
-          } else if (track.fmtp["sprop-sps"]) {
+          } else if (track.fmtp && track.fmtp["sprop-sps"]) {
             params.sps = base64ToArrayBuffer(track.fmtp["sprop-sps"]);
-          } else if (track.fmtp["sprop-pps"]) {
+          } else if (track.fmtp && track.fmtp["sprop-pps"]) {
             params.pps = base64ToArrayBuffer(track.fmtp["sprop-pps"]);
-          } else if (track.fmtp["config"]) {
+          } else if (track.fmtp && track.fmtp["config"]) {
             let config = track.fmtp["config"];
             this.has_config = track.fmtp["cpresent"] != "0";
             let generic = track.rtpmap[track.fmt[0]].name == "MPEG4-GENERIC";
@@ -586,6 +590,7 @@ export class RTSPClientSM extends StateMachine {
     }
     return Promise.all(streams)
       .then((tracks) => {
+        Log.log(tracks);
         let sessionPromises = [];
         for (let session in this.sessions) {
           sessionPromises.push(this.sessions[session].start());
