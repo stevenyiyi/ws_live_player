@@ -11,6 +11,7 @@ export class ADTS {
     bits.skipBits(11);
     let cnt = bits.readBits(2);
     if (!protectionAbs) {
+      /** skip checksum */
       bits.skipBits(16);
     }
     return { size: len - bits.bytepos, frameCount: cnt, offset: bits.bytepos };

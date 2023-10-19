@@ -11,6 +11,7 @@ export class WebsocketTransport extends TinyEvents {
     this.protocols = protocols;
     this.attempts = 1;
     this.timeoutID = 0;
+    this.is_reconnect = false;
     Object.defineProperties(this, {
       readyState: {
         get: function getReadyState() {
@@ -52,7 +53,7 @@ export class WebsocketTransport extends TinyEvents {
       e.code !== 4002 &&
       e.code !== 4003
     ) {
-      this.reconnect();
+      if (this.is_reconnect) this.reconnect();
     }
   }
 
@@ -71,8 +72,17 @@ export class WebsocketTransport extends TinyEvents {
         } else {
           this.emit("jabber", e.data);
         }
+      } else if (classObject === "Blob") {
+        e.data.arrayBuffer().then((buf) => {
+          const ubuf = new Uint8Array(buf);
+          if (36 === ubuf[0]) {
+            this.emit("data", ubuf);
+          } else {
+            this.emit("jabber", ubuf);
+          }
+        });
       } else {
-        Log.log("WS receive invalid data type!");
+        Log.log(`WS receive invalid data type:${classObject}`);
       }
     } else {
       Log.log("WS receive invalid data type!");

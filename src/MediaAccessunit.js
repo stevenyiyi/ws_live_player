@@ -1,5 +1,5 @@
 import { PayloadType } from "./StreamDefine.js";
-export default class MediaAccessunit {
+export class MediaAccessunit {
   constructor(ctype, pts, dts, units) {
     this.ctype = ctype;
     this.pts = pts;

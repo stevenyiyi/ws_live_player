@@ -151,10 +151,7 @@ export class TSParser {
         ].includes(pesType)
       ) {
         if (this.pesParserTypes.has(pesType) && !this.pesParsers.has(pid)) {
-          this.pesParsers.set(
-            pid,
-            new (this.pesParserTypes.get(pesType)(pesType))()
-          );
+          this.pesParsers.set(pid, new (this.pesParserTypes.get(pesType))());
           this.pesAsms[pid] = new PESAsm();
           switch (pesType) {
             case PESType.AAC:
@@ -237,6 +234,7 @@ export class TSParser {
     }
     // TODO: notify about tracks
     if (this.ontracks) {
+      Log.log("ts tracks ready!");
       this.ontracks(tracks);
     }
   }

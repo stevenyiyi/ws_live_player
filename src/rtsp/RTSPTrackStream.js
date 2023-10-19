@@ -96,7 +96,6 @@ export class RTSPTrackStream {
             return;
           }
         }
-        this.client.reconnect();
       });
     }, this.keepaliveTime);
   }

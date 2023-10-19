@@ -98,13 +98,12 @@ export default class RTSPStream extends BaseStream {
     Log.log(tracks);
     this.tracks = tracks;
     if (
-      tracks[0].ptype === PayloadType.TS ||
-      tracks[0].ptype === PayloadType.PS
+      tracks[0].type === PayloadType.TS ||
+      tracks[0].type === PayloadType.PS
     ) {
       this.isContainer = true;
     } else {
       this.isContainer = false;
-      this.hasBFrames = this._getHasBFrames();
       this.seekable = this.client.seekable;
       this.duration = this.client.duration;
       this._decideMSE();
@@ -117,6 +116,7 @@ export default class RTSPStream extends BaseStream {
   }
 
   onTsTracks(tracks) {
+    Log.log(tracks);
     /** add duration\track\offset properties*/
     for (const track of tracks) {
       track.duration = this.tracks[0].duration;
@@ -136,7 +136,6 @@ export default class RTSPStream extends BaseStream {
     if (!hasCodecConf) {
       this.seekable = this.client.seekable;
       this.duration = this.client.duration;
-      this.hasBFrames = this._getHasBFrames();
 
       this._decideMSE();
 
@@ -381,12 +380,12 @@ export default class RTSPStream extends BaseStream {
     } else {
       tracks = this.tracks;
     }
-
+    Log.log(tracks);
     let codecs = "";
     for (const track of tracks) {
       codecs += track.codecs;
     }
-
+    Log.log(`codec:${codecs}`);
     if (MSE.isSupported(codecs)) {
       this.useMSE = true;
       this.remux = new Remuxer(this.video);

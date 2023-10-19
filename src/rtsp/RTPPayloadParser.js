@@ -31,6 +31,7 @@ export class RTPPayloadParser {
       rtp.media.type === "video" &&
       rtp.media.ptype === PayloadType.TS
     ) {
+      /** Parse mpeg2ts */
       let data = rtp.getPayload();
       let offset = 0;
       if (data.byteLength % TSParser.PACKET_LENGTH) {

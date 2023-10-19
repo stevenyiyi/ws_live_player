@@ -590,7 +590,6 @@ export class RTSPClientSM extends StateMachine {
     }
     return Promise.all(streams)
       .then((tracks) => {
-        Log.log(tracks);
         let sessionPromises = [];
         for (let session in this.sessions) {
           sessionPromises.push(this.sessions[session].start());
