@@ -44,14 +44,6 @@ export class RTPPayloadParser {
         );
         offset += TSParser.PACKET_LENGTH;
         if (parsed) {
-          if (parsed.type === StreamType.AUDIO) {
-            return new MediaAccessunit(
-              parsed.pay,
-              parsed.units[0].pts,
-              parsed.units[0].dts,
-              parsed.units
-            );
-          }
           return parsed;
         }
       }

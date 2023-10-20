@@ -1,7 +1,6 @@
 import { getTagged } from "../utils/logger.js";
 import { ADTS } from "./adts.js";
 import { StreamType, PayloadType } from "../StreamDefine.js";
-import { AudioFrame } from "./audio-frame.js";
 const LOG_TAG = "parses:pes_aac";
 const Log = getTagged(LOG_TAG);
 export class AACPES {
@@ -85,13 +84,15 @@ export class AACPES {
       if (!hdr) {
         hdr = ADTS.parseHeader(data.subarray(offset));
       }
+      Log.log(
+        `pes size:${len}, aac header size:${hdr.size},offset:${hdr.offset}`
+      );
       if (hdr.size > 0 && offset + hdr.offset + hdr.size <= len) {
         stamp = pts + frameIndex * frameDuration;
+        res.pts = stamp;
+        res.dts = stamp;
         res.units.push(
-          new AudioFrame(
-            data.subarray(offset + hdr.offset, offset + hdr.offset + hdr.size),
-            stamp
-          )
+          data.subarray(offset + hdr.offset, offset + hdr.offset + hdr.size)
         );
         offset += hdr.offset + hdr.size;
         frameIndex++;
@@ -109,7 +110,11 @@ export class AACPES {
     if (offset < len && data[offset] === 0xff) {
       // TODO: check it
       aacOverFlow = data.subarray(offset, len);
-      //logger.log(`AAC: overflow detected:${len-offset}`);
+      Log.log(
+        `AAC: frame length:${len}, offset:${offset}, overflow detected:${
+          len - offset
+        }`
+      );
     } else {
       aacOverFlow = null;
     }

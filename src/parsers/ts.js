@@ -1,10 +1,12 @@
+import { getTagged } from "../utils/logger.js";
 import { BitArray } from "../utils/binary.js";
 import { PESAsm } from "./pes.js";
 import { H26XPES } from "./pes_h26x.js";
 import { AACPES } from "./pes_aac.js";
 import { G7XXPES } from "./pes_g7xx.js";
 import { PayloadType } from "../StreamDefine.js";
-
+const LOG_TAG = "parses:ts";
+const Log = getTagged(LOG_TAG);
 export class PESType {
   static get AAC() {
     return 0x0f;
@@ -96,6 +98,7 @@ export class TSParser {
       if (this.pmtParsed && this.pesParsers.has(pid)) {
         let pes = this.pesAsms[pid].feed(payload, payStart);
         if (pes) {
+          Log.log(`pes buffer size:${pes.data.byteLength},pts:${pes.pts}`);
           return this.pesParsers.get(pid).parse(pes);
         }
       } else {
