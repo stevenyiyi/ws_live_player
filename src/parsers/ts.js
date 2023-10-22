@@ -77,11 +77,11 @@ export class TSParser {
       /// Ignore transport_scrambling_control
       bits.skipBits(2);
       /// adaptation_field_control (2)
-      let adaptFlag = bits.readBits(1);
-      let payFlag = bits.readBits(1);
+      let adaptation_field_control = bits.readBits(2);
       /// Ignore continuity_counter (4)
       bits.skipBits(4);
-      if (adaptFlag) {
+
+      if (adaptation_field_control === 2 || adaptation_field_control === 3) {
         /// Parse Adaptation_field
         /// adaptation_field_length(8)
         let adaptSize = bits.readBits(8);
@@ -90,7 +90,10 @@ export class TSParser {
           return null;
         }
       }
-      if (!payFlag) return null;
+
+      if (adaptation_field_control === 0 || adaptation_field_control === 2) {
+        return null;
+      }
 
       /// Parse payload
       let payload = packet.subarray(bits.bytepos); //bitSlice(packet, bits.bitpos+bits.bytepos*8);
@@ -98,7 +101,7 @@ export class TSParser {
       if (this.pmtParsed && this.pesParsers.has(pid)) {
         let pes = this.pesAsms[pid].feed(payload, payStart);
         if (pes) {
-          Log.log(`pes buffer size:${pes.data.byteLength},pts:${pes.pts}`);
+          Log.debug(`pes buffer size:${pes.data.byteLength},pts:${pes.pts}`);
           return this.pesParsers.get(pid).parse(pes);
         }
       } else {
@@ -111,6 +114,8 @@ export class TSParser {
           this.pmtParsed = true;
         }
       }
+    } else {
+      Log.error("Invalid ts packet, first byte must be 0x47!");
     }
     return null;
   }
