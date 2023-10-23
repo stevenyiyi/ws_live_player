@@ -52,7 +52,7 @@ export default class RTP {
 
     this.media = sdp.getMediaBlockByPayloadType(this.pt);
     if (null === this.media) {
-      Log.log(`Media description for payload type: ${this.pt} not provided.`);
+      Log.error(`Media description for payload type: ${this.pt} not provided.`);
     } else {
       this.type = this.media.ptype; //PayloadType.string_map[this.media.rtpmap[this.media.fmt[0]].name];
     }

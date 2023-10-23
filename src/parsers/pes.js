@@ -1,5 +1,5 @@
 import { appendByteArray } from "../utils/binary.js";
-
+import { BitArray } from "../utils/binary.js";
 export class PESAsm {
   constructor() {
     this.fragments = [];
@@ -60,13 +60,8 @@ export class PESAsm {
   }
 
   parseExtension(frag) {
-    let pesFlags,
-      pesPrefix,
-      pesLen,
-      pesHdrLen,
-      pesPts,
-      pesDts,
-      payloadStartOffset;
+    let pesFlags, pesHdrLen, pesPts, pesDts, payloadStartOffset;
+
     pesFlags = frag[1];
     if (pesFlags & 0xc0) {
       /* PES header described here : http://dvd.sourceforge.net/dvdinfo/pes-hdr.html
@@ -123,6 +118,7 @@ export class PESAsm {
         parsed = this.parseExtension(this.fragments[0].subarray(6));
         offset = parsed.offset;
       }
+
       if (!this.pesPkt) {
         this.pesPkt = new Uint8Array(this.pesLength);
       }
@@ -145,6 +141,8 @@ export class PESAsm {
         this.pesLength -= data.byteLength;
       }
       res = { data: this.pesPkt, pts: parsed.pts, dts: parsed.dts };
+      console.log(`This PES length:${this.pesLength}, length:${poffset}`);
+      /// this.pesLength = 0;
     } else {
       this.pesPkt = null;
     }
