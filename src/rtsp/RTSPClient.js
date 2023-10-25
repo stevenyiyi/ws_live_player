@@ -274,6 +274,8 @@ export class RTSPClientSM extends StateMachine {
     let channel = data[1];
     if (this.rtp_channels.has(channel)) {
       this.onRTP({ packet: data.subarray(4), type: channel });
+    } else {
+      Log.error(`Not found channel:${channel}!`);
     }
   }
 

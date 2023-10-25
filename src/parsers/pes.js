@@ -1,7 +1,10 @@
 import { appendByteArray } from "../utils/binary.js";
-import { BitArray } from "../utils/binary.js";
+import { getTagged } from "../utils/logger.js";
+const LOG_TAG = "parses:pes";
+const Log = getTagged(LOG_TAG);
 export class PESAsm {
-  constructor() {
+  constructor(pid) {
+    this.pid = pid;
     this.fragments = [];
     this.pesLength = 0;
     this.pesPkt = null;
@@ -26,6 +29,9 @@ export class PESAsm {
     if (pesPrefix === 1) {
       /// PES_packet_length(16)
       let pesLength = (hdr[4] << 8) + hdr[5];
+      Log.debug(
+        `pid:${this.pid},pes length:${pesLength},this.pesLength:${this.pesLength}`
+      );
       if (pesLength) {
         this.pesLength = pesLength;
         this.hasLength = true;
@@ -140,20 +146,31 @@ export class PESAsm {
         poffset += data.byteLength;
         this.pesLength -= data.byteLength;
       }
-      res = { data: this.pesPkt, pts: parsed.pts, dts: parsed.dts };
-      console.log(`This PES length:${this.pesLength}, length:${poffset}`);
+      res = {
+        data: this.pesPkt,
+        length: poffset,
+        pts: parsed.pts,
+        dts: parsed.dts
+      };
+      Log.debug(
+        `pid:${this.pid},This PES length:${this.pesLength}, length:${poffset}`
+      );
       /// this.pesLength = 0;
     } else {
       this.pesPkt = null;
     }
+    Log.debug(
+      `feed pid:${this.pid},frag size:${frag.byteLength},shouldParse:${shouldParse}`
+    );
     this.pesLength += frag.byteLength;
 
     if (
       this.fragments.length &&
       this.fragments[this.fragments.length - 1].byteLength < 6
     ) {
+      /** Merge small buffer to a whole buffer */
       this.fragments[this.fragments.length - 1] = appendByteArray(
-        this.fragments[0],
+        this.fragments[this.fragments.length - 1],
         frag
       );
     } else {

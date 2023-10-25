@@ -92,6 +92,8 @@ export class TSParser {
       }
 
       if (adaptation_field_control === 0 || adaptation_field_control === 2) {
+        /// No pes
+        Log.warn("No pes buffer!");
         return null;
       }
 
@@ -101,7 +103,7 @@ export class TSParser {
       if (this.pmtParsed && this.pesParsers.has(pid)) {
         let pes = this.pesAsms[pid].feed(payload, payStart);
         if (pes) {
-          Log.debug(`pes buffer size:${pes.data.byteLength},pts:${pes.pts}`);
+          Log.debug(`pes buffer size:${pes.length},pts:${pes.pts}`);
           return this.pesParsers.get(pid).parse(pes);
         }
       } else {
@@ -112,6 +114,8 @@ export class TSParser {
           /// Parse PMT
           this.parsePMT(payload);
           this.pmtParsed = true;
+        } else {
+          Log.error(`Invalid pid:${pid}`);
         }
       }
     } else {
@@ -160,7 +164,7 @@ export class TSParser {
       ) {
         if (this.pesParserTypes.has(pesType) && !this.pesParsers.has(pid)) {
           this.pesParsers.set(pid, new (this.pesParserTypes.get(pesType))());
-          this.pesAsms[pid] = new PESAsm();
+          this.pesAsms[pid] = new PESAsm(pid);
           switch (pesType) {
             case PESType.AAC:
               tracks.add({
