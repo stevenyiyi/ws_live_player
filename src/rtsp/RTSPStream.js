@@ -134,21 +134,26 @@ export default class RTSPStream extends BaseStream {
     }
 
     if (!hasCodecConf) {
-      this.seekable = this.client.seekable;
-      this.duration = this.client.duration;
+      this._onTracksReady(tracks);
+    }
+  }
 
-      this._decideMSE();
+  _onTracksReady(tracks) {
+    this.seekable = this.client.seekable;
+    this.duration = this.client.duration;
 
-      if (this.useMSE) {
-        this.eventSource.dispatchEvent("tracks", tracks);
-      } else {
-        this.eventSource.dispatchEvent("loadedmetadata");
-      }
+    this._decideMSE();
+
+    if (this.useMSE) {
+      this.eventSource.dispatchEvent("tracks", tracks);
+    } else {
+      this.eventSource.dispatchEvent("loadedmetadata");
     }
   }
 
   /// MSE  accessunit event notify
   onSample(accessunit) {
+    Log.debug("on sample!");
     if (
       accessunit.ctype === PayloadType.H264 ||
       accessunit.ctype === PayloadType.H265
@@ -230,7 +235,7 @@ export default class RTSPStream extends BaseStream {
         f = !!t.ready;
       }
       if (f) {
-        this.onTsTracks(tracks);
+        this._onTracksReady(tracks);
       }
     }
 

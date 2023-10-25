@@ -1,6 +1,7 @@
 import { getTagged } from "../utils/logger.js";
 import { ADTS } from "./adts.js";
-import { StreamType, PayloadType } from "../StreamDefine.js";
+import { PayloadType } from "../StreamDefine.js";
+import { MediaAccessunit } from "../MediaAccessunit.js";
 const LOG_TAG = "parses:pes_aac";
 const Log = getTagged(LOG_TAG);
 export class AACPES {
@@ -53,7 +54,7 @@ export class AACPES {
     }
 
     let hdr = null;
-    let res = { units: [], type: StreamType.AUDIO, pay: PayloadType.AAC };
+    let res = new MediaAccessunit(PayloadType.AAC, 0, 0, []);
     if (!this.config) {
       hdr = ADTS.parseHeaderConfig(data.subarray(offset));
       this.config = hdr.config;
@@ -84,9 +85,9 @@ export class AACPES {
       if (!hdr) {
         hdr = ADTS.parseHeader(data.subarray(offset));
       }
-      Log.log(
+      /** Log.log(
         `pes size:${len}, aac header size:${hdr.size},offset:${hdr.offset}`
-      );
+      ); */
       if (hdr.size > 0 && offset + hdr.offset + hdr.size <= len) {
         stamp = pts + frameIndex * frameDuration;
         res.pts = stamp;

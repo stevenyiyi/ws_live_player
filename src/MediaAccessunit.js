@@ -5,6 +5,7 @@ export class MediaAccessunit {
     this.pts = pts;
     this.dts = dts;
     this.units = units;
+    this.config = null;
 
     /// Properties defines
     Object.defineProperties(this, {

@@ -1,9 +1,8 @@
-import { MediaAccessunit } from "../MediaAccessunit.js";
 import { NALUAsm } from "./nalu-asm.js";
 import { NALUAsmHevc } from "./nalu-asm-hevc.js";
 import { appendByteArray } from "../utils/binary.js";
-import { StreamType, PayloadType } from "../StreamDefine.js";
-
+import { PayloadType } from "../StreamDefine.js";
+import { MediaAccessunit } from "../MediaAccessunit.js";
 export class H26XPES {
   constructor(pesType) {
     this.pesType = pesType;
@@ -18,7 +17,7 @@ export class H26XPES {
   parse(pes) {
     let array = pes.data;
     let i = 0,
-      len = array.byteLength,
+      len = pes.length,
       value,
       overflow,
       state = 0;
