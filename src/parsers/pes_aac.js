@@ -32,7 +32,7 @@ export class AACPES {
     }
 
     // look for ADTS header (0xFFFx)
-    for (offset = startOffset, len = data.length; offset < len - 1; offset++) {
+    for (offset = startOffset, len = pes.length; offset < len - 1; offset++) {
       if (data[offset] === 0xff && (data[offset + 1] & 0xf0) === 0xf0) {
         break;
       }
@@ -85,9 +85,9 @@ export class AACPES {
       if (!hdr) {
         hdr = ADTS.parseHeader(data.subarray(offset));
       }
-      /** Log.log(
+      Log.log(
         `pes size:${len}, aac header size:${hdr.size},offset:${hdr.offset}`
-      ); */
+      );
       if (hdr.size > 0 && offset + hdr.offset + hdr.size <= len) {
         stamp = pts + frameIndex * frameDuration;
         res.pts = stamp;
@@ -106,22 +106,21 @@ export class AACPES {
       } else {
         break;
       }
-      hdr = null;
     }
     if (offset < len && data[offset] === 0xff) {
       // TODO: check it
       aacOverFlow = data.subarray(offset, len);
       Log.log(
-        `AAC: frame length:${len}, offset:${offset}, overflow detected:${
-          len - offset
-        }`
+        `AAC: frame length:${len}, offset:${offset}, hdr size:${
+          hdr.size
+        }, hdr offset:${hdr.offset} overflow detected:${len - offset}`
       );
     } else {
       aacOverFlow = null;
     }
     this.aacOverFlow = aacOverFlow;
     this.lastAacPTS = stamp;
-
+    hdr = null;
     return res;
   }
 }
