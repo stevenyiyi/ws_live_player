@@ -159,7 +159,8 @@ export class H264Parser {
       picHeightInMapUnitsMinus1,
       frameMbsOnlyFlag,
       scalingListCount;
-    decoder.readUByte();
+    /// Skip nal head
+    decoder.skipBits(8);
     profileIdc = decoder.readUByte(); // profile_idc
     profileCompat = decoder.readBits(5); // constraint_set[0-4]_flag, u(5)
     decoder.skipBits(3); // reserved_zero_3bits u(3),

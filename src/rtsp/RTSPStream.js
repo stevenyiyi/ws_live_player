@@ -381,7 +381,7 @@ export default class RTSPStream extends BaseStream {
   _decideMSE() {
     let tracks = null;
     if (this.isContainer) {
-      tracks = tracks[0].tracks;
+      tracks = this.tracks[0].tracks;
     } else {
       tracks = this.tracks;
     }
@@ -395,6 +395,8 @@ export default class RTSPStream extends BaseStream {
       this.useMSE = true;
       this.remux = new Remuxer(this.video);
       this.remux.attachClient(this);
+    } else {
+      Log.error(`MSE not supported codec:${codecs}`);
     }
   }
 

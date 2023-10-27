@@ -38,7 +38,7 @@ export class H265Parser {
   }
 
   static trim_leading_zeros(str) {
-    for (let i = 0; i < str.size(); ++i) {
+    for (let i = 0; i < str.length; ++i) {
       if (str.charCodeAt(i) === "0") continue;
       return str.substr(i);
     }
@@ -213,6 +213,8 @@ export class H265Parser {
   // See Rec. ITU-T H.265 v3 (04/2015) Chapter 7.3.2.1 for reference
   static readVPS(data) {
     let reader = new ExpGolomb(data);
+    // Skip nal head
+    reader.skipBits(16);
     // Skip vps_video_parameter_set_id
     reader.skipBits(4);
     // Skip vps_base_layer_internal_flag
@@ -222,7 +224,8 @@ export class H265Parser {
     // Skip vps_max_layers_minus_1
     reader.skipBits(6);
 
-    let vps_max_sub_layers_minus1 = reader.readBits(3) + 1;
+    // Skip vps_max_sub_layers_minus1
+    reader.skipBits(3); // + 1;
     // Skip vps_temporal_id_nesting_flags
     reader.skipBits(1);
 
@@ -243,6 +246,8 @@ export class H265Parser {
   /// See Rec. ITU-T H.265 v3 (04/2015) Chapter 7.3.2.2 for reference
   static readSPS(data) {
     let decoder = new ExpGolomb(data);
+    // Skip nal head
+    decoder.skipBits(16);
     // Skip sps_video_parameter_set_id
     decoder.skipBits(4);
     // sps_max_sub_layers_minus1

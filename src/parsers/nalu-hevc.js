@@ -193,7 +193,7 @@ export class HEVC_NALU {
   getData() {
     let header = new Uint8Array(6 + this.data.byteLength);
     let view = new DataView(header.buffer);
-    view.setUint32(0, this.data.byteLength + 1);
+    view.setUint32(0, this.data.byteLength + 2);
     view.setUint8(4, ((this.ntype << 1) & 0x7e) | (this.layerid >> 5));
     view.setUint8(5, (this.layerid << 3) | this.tid);
     header.set(this.data, 6);
