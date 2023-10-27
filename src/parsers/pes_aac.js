@@ -85,9 +85,9 @@ export class AACPES {
       if (!hdr) {
         hdr = ADTS.parseHeader(data.subarray(offset));
       }
-      Log.log(
+      /** Log.log(
         `pes size:${len}, aac header size:${hdr.size},offset:${hdr.offset}`
-      );
+      ); */
       if (hdr.size > 0 && offset + hdr.offset + hdr.size <= len) {
         stamp = pts + frameIndex * frameDuration;
         res.pts = stamp;

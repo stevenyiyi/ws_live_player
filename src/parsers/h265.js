@@ -205,7 +205,7 @@ export class H265Parser {
         break;
     }
 
-    if (push === null && this.getLayerID() > 0) {
+    if (push === null && unit.getLayerID() > 0) {
       push = true;
     }
     return push;
@@ -222,7 +222,7 @@ export class H265Parser {
     // Skip vps_max_layers_minus_1
     reader.skipBits(6);
 
-    let vps_max_sub_layers_minus1 = reader.getBits(3) + 1;
+    let vps_max_sub_layers_minus1 = reader.readBits(3) + 1;
     // Skip vps_temporal_id_nesting_flags
     reader.skipBits(1);
 
@@ -230,12 +230,12 @@ export class H265Parser {
     reader.skipBits(16);
 
     let config = {};
-    config["GeneralProfileSpace"] = reader.getBits(2);
+    config["GeneralProfileSpace"] = reader.readBits(2);
     config["GeneralTierFlag"] = reader.readBoolean();
     config["GeneralProfileIdc"] = reader.readBits(5);
     config["GeneralProfileCompatibilityFlags"] = reader.readUInt();
     config["GeneralConstraintIndicatorFlags"] =
-      (reader.getBits(16) << 32) | reader.getBits(32);
+      (reader.readBits(16) << 32) | reader.readBits(32);
     config["GeneralLevelIdc"] = reader.readBits(8);
     return config;
   }
@@ -246,7 +246,7 @@ export class H265Parser {
     // Skip sps_video_parameter_set_id
     decoder.skipBits(4);
     // sps_max_sub_layers_minus1
-    let sps_max_sub_layers_minus1 = decoder.getBits(3);
+    let sps_max_sub_layers_minus1 = decoder.readBits(3);
     // Skip sps_temporal_id_nesting_flag;
     decoder.skipBits(1);
     // Skip general profile
@@ -255,8 +255,8 @@ export class H265Parser {
       let subLayerProfilePresentFlag = new Uint8Array(8);
       let subLayerLevelPresentFlag = new Uint8Array(8);
       for (let i = 0; i < sps_max_sub_layers_minus1; ++i) {
-        subLayerProfilePresentFlag[i] = decoder.getBits(1);
-        subLayerLevelPresentFlag[i] = decoder.getBits(1);
+        subLayerProfilePresentFlag[i] = decoder.readBits(1);
+        subLayerLevelPresentFlag[i] = decoder.readBits(1);
       }
       // Skip reserved
       decoder.skipBits(2 * (8 - sps_max_sub_layers_minus1));
@@ -278,7 +278,7 @@ export class H265Parser {
     let separate_colour_plane_flag = 0;
     if (chromaFormatIdc === 3) {
       // separate_colour_plane_flag
-      separate_colour_plane_flag = decoder.getBits(1);
+      separate_colour_plane_flag = decoder.readBits(1);
     }
 
     // pic_width_in_luma_samples

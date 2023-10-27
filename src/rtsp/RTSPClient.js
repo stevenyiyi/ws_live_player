@@ -646,7 +646,7 @@ export class RTSPClientSM extends StateMachine {
       if (rtp.media) {
         let pay = this.payParser.parse(rtp);
         if (pay) {
-          this.parent.emit("samples", pay);
+          this.parent.emit("sample", pay);
         }
       }
     }

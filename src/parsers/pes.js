@@ -29,9 +29,9 @@ export class PESAsm {
     if (pesPrefix === 1) {
       /// PES_packet_length(16)
       let pesLength = (hdr[4] << 8) + hdr[5];
-      Log.debug(
+      /** Log.debug(
         `pid:${this.pid},pes length:${pesLength},this.pesLength:${this.pesLength}`
-      );
+      ); */
       if (pesLength) {
         this.pesLength = pesLength;
         this.hasLength = true;
@@ -152,16 +152,16 @@ export class PESAsm {
         pts: parsed.pts,
         dts: parsed.dts
       };
-      Log.debug(
+      /** Log.debug(
         `pid:${this.pid},This PES length:${this.pesLength}, length:${poffset}`
-      );
+      ); */
       /// this.pesLength = 0;
     } else {
       this.pesPkt = null;
     }
-    Log.debug(
+    /** Log.debug(
       `feed pid:${this.pid},frag size:${frag.byteLength},shouldParse:${shouldParse}`
-    );
+    ); */
     this.pesLength += frag.byteLength;
 
     if (

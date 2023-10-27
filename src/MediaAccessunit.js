@@ -18,7 +18,7 @@ export class MediaAccessunit {
   isKeyFrame() {
     let f = false;
     if (this.ctype === PayloadType.H264 || this.ctype === PayloadType.H265) {
-      for (let unit in this.units) {
+      for (const unit of this.units) {
         if (unit.isKeyframe()) {
           f = true;
           break;

@@ -3,7 +3,8 @@ import { NALUAsm } from "../parsers/nalu-asm.js";
 import { NALUAsmHevc } from "../parsers/nalu-asm-hevc.js";
 import { AACAsm } from "../parsers/aac-asm.js";
 import { TSParser } from "../parsers/ts.js";
-import { PayloadType, StreamType } from "../StreamDefine.js";
+import { PayloadType } from "../StreamDefine.js";
+import { appendByteArray } from "../utils/binary.js";
 import { Log } from "../utils/logger.js";
 
 export class RTPPayloadParser {
@@ -14,6 +15,7 @@ export class RTPPayloadParser {
     this.g7xxparser = new RTPGXXParser();
     this.tsparser = new TSParser();
     this.ontracks = null;
+    this.pendingData = null;
     this.tsparser.ontracks = (tracks) => {
       this.ontracks(tracks);
     };
@@ -38,15 +40,24 @@ export class RTPPayloadParser {
         Log.error(`Invalid rtp ts payload length:${data.ByteLength}`);
         throw new Error(`Invalid rtp ts payload length:${data.ByteLength}`);
       }
+
+      if (this.pendingData) {
+        data = appendByteArray(this.pendingData, data);
+        this.pendingData = null;
+      }
+
       while (offset < data.byteLength) {
         let parsed = this.tsparser.parse(
           data.subarray(offset, offset + TSParser.PACKET_LENGTH)
         );
         offset += TSParser.PACKET_LENGTH;
         if (parsed) {
+          /// Storage pending ts data
+          this.pendingData = data.subarray(offset);
           return parsed;
         }
       }
+      return null;
     } else if (
       rtp.media.type === "audio" &&
       rtp.media.ptype === PayloadType.AAC

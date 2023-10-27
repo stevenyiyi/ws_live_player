@@ -49,7 +49,9 @@ export class H26XPES {
                 array.subarray(lastUnitStart, i - state - 1)
               );
               if (nalu) {
-                units.push(nalu);
+                for (const enalu of nalu) {
+                  units.push(enalu);
+                }
               }
             } else {
               // If NAL units are not starting right at the beginning of the PES packet, push preceding data into previous NAL unit.
@@ -78,7 +80,9 @@ export class H26XPES {
         array.subarray(lastUnitStart, len)
       );
       if (nalu) {
-        units.push(nalu);
+        for (const enalu of nalu) {
+          units.push(enalu);
+        }
       }
     }
     this.lastUnit = units[units.length - 1];
