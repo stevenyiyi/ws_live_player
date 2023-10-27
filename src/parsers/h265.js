@@ -237,8 +237,9 @@ export class H265Parser {
     config["GeneralTierFlag"] = reader.readBoolean();
     config["GeneralProfileIdc"] = reader.readBits(5);
     config["GeneralProfileCompatibilityFlags"] = reader.readUInt();
-    config["GeneralConstraintIndicatorFlags"] =
-      (reader.readBits(16) << 32) | reader.readBits(32);
+    config["GeneralConstraintIndicatorFlags"] = Number(
+      (reader.readBits(16) << 32) | reader.readBits(32)
+    );
     config["GeneralLevelIdc"] = reader.readBits(8);
     return config;
   }
@@ -288,8 +289,10 @@ export class H265Parser {
 
     // pic_width_in_luma_samples
     let pic_width_in_luma_samples = decoder.readUEG();
+    console.log(`pic_width_in_luma_samples:${pic_width_in_luma_samples}`);
     // pic_height_in_luma_samples
     let pic_height_in_luma_samples = decoder.readUEG();
+    console.log(`pic_height_in_luma_samples:${pic_height_in_luma_samples}`);
 
     let conformance_window_flag = decoder.readBoolean();
     if (conformance_window_flag) {

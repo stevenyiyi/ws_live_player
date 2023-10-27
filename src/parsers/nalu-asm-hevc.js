@@ -116,7 +116,7 @@ export class NALUAsmHevc {
 
     let header = NALUAsmHevc.parseNALHeader(data.getUint16(0));
 
-    let nal_start_idx = 1;
+    let nal_start_idx = 2;
 
     let unit = null;
     if (header.type >= 1 && header.type <= 47) {
