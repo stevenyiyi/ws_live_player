@@ -1,11 +1,10 @@
 /**
  * Parser for exponential Golomb codes, a variable-bitwidth number encoding scheme used by h264/hevc.
-*/
+ */
 // TODO: asm.js
-import {Log as logger} from '../utils/logger.js';
+import { Log as logger } from "../utils/logger.js";
 
 export class ExpGolomb {
-
   constructor(data) {
     this.data = data;
     // the number of bytes left to examine in this.data
@@ -18,15 +17,18 @@ export class ExpGolomb {
 
   // ():void
   loadWord() {
-    var
-      position = this.data.byteLength - this.bytesAvailable,
+    var position = this.data.byteLength - this.bytesAvailable,
       workingBytes = new Uint8Array(4),
       availableBytes = Math.min(4, this.bytesAvailable);
     if (availableBytes === 0) {
-      throw new Error('no bytes available');
+      throw new Error("no bytes available");
     }
     workingBytes.set(this.data.subarray(position, position + availableBytes));
-    this.word = new DataView(workingBytes.buffer, workingBytes.byteOffset, workingBytes.byteLength).getUint32(0);
+    this.word = new DataView(
+      workingBytes.buffer,
+      workingBytes.byteOffset,
+      workingBytes.byteLength
+    ).getUint32(0);
     // track the amount of this.data that has been processed
     this.bitsAvailable = availableBytes * 8;
     this.bytesAvailable -= availableBytes;
@@ -41,7 +43,7 @@ export class ExpGolomb {
     } else {
       count -= this.bitsAvailable;
       skipBytes = count >> 3;
-      count -= (skipBytes << 3);
+      count -= skipBytes << 3;
       this.bytesAvailable -= skipBytes;
       this.loadWord();
       this.word <<= count;
@@ -51,11 +53,10 @@ export class ExpGolomb {
 
   // (size:int):uint
   readBits(size) {
-    var
-      bits = Math.min(this.bitsAvailable, size), // :uint
+    var bits = Math.min(this.bitsAvailable, size), // :uint
       valu = this.word >>> (32 - bits); // :uint
     if (size > 32) {
-      logger.error('Cannot read more than 32 bits at a time');
+      logger.error("Cannot read more than 32 bits at a time");
     }
     this.bitsAvailable -= bits;
     if (this.bitsAvailable > 0) {
@@ -65,7 +66,7 @@ export class ExpGolomb {
     }
     bits = size - bits;
     if (bits > 0) {
-      return valu << bits | this.readBits(bits);
+      return (valu << bits) | this.readBits(bits);
     } else {
       return valu;
     }
@@ -74,7 +75,11 @@ export class ExpGolomb {
   // ():uint
   skipLZ() {
     var leadingZeroCount; // :uint
-    for (leadingZeroCount = 0; leadingZeroCount < this.bitsAvailable; ++leadingZeroCount) {
+    for (
+      leadingZeroCount = 0;
+      leadingZeroCount < this.bitsAvailable;
+      ++leadingZeroCount
+    ) {
       if (0 !== (this.word & (0x80000000 >>> leadingZeroCount))) {
         // the first bit of working word is 1
         this.word <<= leadingZeroCount;
@@ -129,8 +134,8 @@ export class ExpGolomb {
   readUShort() {
     return this.readBits(16);
   }
-    // ():int
+  // ():int
   readUInt() {
     return this.readBits(32);
-  }  
+  }
 }
