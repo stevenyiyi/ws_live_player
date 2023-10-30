@@ -11,6 +11,7 @@ export class SDPParser {
     this.timing = null;
     this.sessionBlock = {};
     this.media = {};
+    this.tracks = {};
     this.mediaMap = {};
   }
 

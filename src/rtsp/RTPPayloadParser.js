@@ -4,31 +4,37 @@ import { NALUAsmHevc } from "../parsers/nalu-asm-hevc.js";
 import { AACAsm } from "../parsers/aac-asm.js";
 import { TSParser } from "../parsers/ts.js";
 import { PayloadType } from "../StreamDefine.js";
-import { appendByteArray } from "../utils/binary.js";
+import { TinyEvents } from "../utils/event.js";
 import { Log } from "../utils/logger.js";
 
-export class RTPPayloadParser {
+export class RTPPayloadParser extends TinyEvents {
   constructor() {
+    super();
     this.h264parser = new RTPH264Parser();
     this.h265parser = new RTPH265Parser();
     this.aacparser = new RTPAACParser();
     this.g7xxparser = new RTPGXXParser();
     this.tsparser = new TSParser();
-    this.ontracks = null;
-    this.pendingData = null;
     this.tsparser.ontracks = (tracks) => {
-      this.ontracks(tracks);
+      this.emit("tracks", tracks);
     };
   }
 
   parse(rtp) {
+    let parsed = null;
     if (rtp.media.type === "video" && rtp.media.ptype === PayloadType.H264) {
-      return this.h264parser.parse(rtp);
+      parsed = this.h264parser.parse(rtp);
+      if (parsed) {
+        this.emit("sample", parsed);
+      }
     } else if (
       rtp.media.type === "video" &&
       rtp.media.ptype === PayloadType.H265
     ) {
-      return this.h265parser.parse(rtp);
+      parsed = this.h265parser.parse(rtp);
+      if (parsed) {
+        this.emit("sample", parsed);
+      }
     } else if (
       rtp.media.type === "video" &&
       rtp.media.ptype === PayloadType.TS
@@ -41,28 +47,23 @@ export class RTPPayloadParser {
         throw new Error(`Invalid rtp ts payload length:${data.ByteLength}`);
       }
 
-      if (this.pendingData) {
-        data = appendByteArray(this.pendingData, data);
-        this.pendingData = null;
-      }
-
       while (offset < data.byteLength) {
-        let parsed = this.tsparser.parse(
+        parsed = this.tsparser.parse(
           data.subarray(offset, offset + TSParser.PACKET_LENGTH)
         );
         offset += TSParser.PACKET_LENGTH;
         if (parsed) {
-          /// Storage pending ts data
-          this.pendingData = data.subarray(offset);
-          return parsed;
+          this.emit("sample", parsed);
         }
       }
-      return null;
     } else if (
       rtp.media.type === "audio" &&
       rtp.media.ptype === PayloadType.AAC
     ) {
-      return this.aacparser.parse(rtp);
+      parsed = this.aacparser.parse(rtp);
+      if (parsed) {
+        this.emit("sample", parsed);
+      }
     } else if (
       rtp.media.type === "audio" &&
       (rtp.media.ptype === PayloadType.G711 ||
@@ -71,9 +72,14 @@ export class RTPPayloadParser {
         rtp.media.ptype === PayloadType.G726 ||
         rtp.media.ptype === PayloadType.G729)
     ) {
-      return this.g7xxparser.parse(rtp);
+      parsed = this.g7xxparser.parse(rtp);
+      if (parsed) {
+        this.emit("sample", parsed);
+      }
     } else {
-      return null;
+      throw Error(
+        `Not support codec:${PayloadType.stringCodec(rtp.media.ptype)}`
+      );
     }
   }
 }

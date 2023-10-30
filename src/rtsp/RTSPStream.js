@@ -19,25 +19,17 @@ export default class RTSPStream extends BaseStream {
     this.remux = null;
     this.isContainer = false;
 
-    this.loadedMetadata = false;
-    this.processingTimer = 0;
-
-    this.loadedAudioMetadata = false;
-    this.loadedVideoMetadata = false;
-    this.loadedAllMetadata = false;
-
     this.onseek = null;
     this.promises = {};
 
-    this.audioBuffers = [];
-    this.videoBuffers = [];
-
-    this.videoBytes = 0;
-    this.audioBytes = 0;
     this.firstAudioPts = -1;
     this.firstVideoPts = -1;
     this.lastKeyframeTimestamp = -1;
     this.firstPlaying = false;
+    this.tracksReady = false;
+
+    /// Sample queues
+    this.sampleQueues = {};
 
     /// Events
     this._onTracks = this.onTracks.bind(this);
@@ -95,7 +87,7 @@ export default class RTSPStream extends BaseStream {
 
   /// events
   onTracks(tracks) {
-    Log.log(tracks);
+    Log.debug("onTracks:", tracks);
     this.tracks = tracks;
     if (
       tracks[0].type === PayloadType.TS ||
@@ -106,17 +98,24 @@ export default class RTSPStream extends BaseStream {
       this.isContainer = false;
       this.seekable = this.client.seekable;
       this.duration = this.client.duration;
+
+      this.sampleQueues[
+        PayloadType.string_map[track.rtpmap[track.fmt[0]].name]
+      ] = [];
       this._decideMSE();
       if (this.useMSE) {
         this.eventSource.dispatchEvent("tracks", tracks);
       } else {
-        this.eventSource.dispatchEvent("loadedmetadata");
+        this.eventSource.dispatchEvent(
+          "error",
+          "Codec not supported using MSE!"
+        );
       }
     }
   }
 
   onTsTracks(tracks) {
-    Log.log(tracks);
+    Log.debug("onTsTracks:", tracks);
     /** add duration\track\offset properties*/
     for (const track of tracks) {
       track.duration = this.tracks[0].duration;
@@ -147,7 +146,7 @@ export default class RTSPStream extends BaseStream {
     if (this.useMSE) {
       this.eventSource.dispatchEvent("tracks", tracks);
     } else {
-      this.eventSource.dispatchEvent("loadedmetadata");
+      this.eventSource.dispatchEvent("error", "Codec not supported using MSE!");
     }
   }
 
@@ -235,8 +234,9 @@ export default class RTSPStream extends BaseStream {
       for (const t of tracks) {
         f = !!t.ready;
       }
-      if (f) {
+      if (f && !this.tracksReady) {
         this._onTracksReady(tracks);
+        this.tracksReady = true;
       }
     }
 
@@ -252,16 +252,12 @@ export default class RTSPStream extends BaseStream {
       this.lastKeyframeTimestamp = accessunit.pts;
     }
 
-    track.sampleQueue.push(accessunit);
-    let sample = track.sampleQueue.shift();
-    while (sample) {
-      this.eventSource.dispatchEvent("sample", sample);
-      sample = track.sampleQueue.shift();
-    }
+    this.eventSource.dispatchEvent("sample", accessunit);
   }
 
   onClear() {
     this.buffering = false;
+    this.eventSource.dispatchEvent("clear");
     Log.log("onClear!");
   }
 
@@ -349,6 +345,13 @@ export default class RTSPStream extends BaseStream {
     Log.log(tracks);
     let codecs = [];
     for (const track of tracks) {
+      if (this.isContainer) {
+        this.sampleQueues[track.type] = [];
+      } else {
+        this.sampleQueues[
+          PayloadType.string_map[track.rtpmap[track.fmt[0]].name]
+        ] = [];
+      }
       codecs.push(track.codec);
     }
     if (MSE.isSupported(codecs)) {

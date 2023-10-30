@@ -171,9 +171,13 @@ export class RTSPClientSM extends StateMachine {
     this.ontracks = null;
     this.ontstracks = null;
     this.promises = {};
-    this.payParser.ontracks = (tracks) => {
+    this.payParser.on("tracks", (tracks) => {
       this.ontstracks(tracks);
-    };
+    });
+
+    this.payParser.on("sample", (sample) => {
+      this.parent.emit("sample", sample);
+    });
 
     this.addState(RTSPClientSM.STATE_INITIAL, {})
       .addState(RTSPClientSM.STATE_OPTIONS, {
@@ -639,15 +643,9 @@ export class RTSPClientSM extends StateMachine {
 
       rtp.timestamp =
         rtp.timestamp - this.timeOffset[rtp.pt] - this.lastTimestamp[rtp.pt];
-      // TODO: overflow
-      // if (rtp.timestamp < 0) {
-      //     rtp.timestamp = (rtp.timestamp + Number.MAX_SAFE_INTEGER) % 0x7fffffff;
-      // }
+
       if (rtp.media) {
-        let pay = this.payParser.parse(rtp);
-        if (pay) {
-          this.parent.emit("sample", pay);
-        }
+        this.payParser.parse(rtp);
       }
     }
   }

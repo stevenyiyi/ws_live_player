@@ -3,6 +3,7 @@ export default class BaseStream {
   constructor(options) {
     this.eventSource = new EventEmitter();
     this.cacheSize = options.cacheSize || 500; //default ms
+    this.flushInterval = options.flush || 100;
     this.wsurl = options.wsurl;
     this.rtspurl = options.rtspurl;
     this.video = options.video;
@@ -79,6 +80,18 @@ export default class BaseStream {
   /// void
   abort() {
     throw Error("Call abort in abstract class!");
+  }
+
+  startStreamFlush() {
+    this.flushTimerId = setInterval(() => {
+      if (!this.paused) {
+        this.eventSource.dispatchEvent("flush");
+      }
+    }, this.flushInterval);
+  }
+
+  stopStreamFlush() {
+    clearInterval(this.flushTimerId);
   }
 
   /// Private methods

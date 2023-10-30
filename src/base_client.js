@@ -3,7 +3,7 @@ import { Url } from "./utils/url.js";
 import { TinyEvents } from "./utils/event.js";
 
 export class BaseClient extends TinyEvents {
-  constructor(options = { flush: 100 }) {
+  constructor(options) {
     super();
 
     this.options = options;
@@ -87,18 +87,6 @@ export class BaseClient extends TinyEvents {
     this.stop();
     this.endpoint = Url.parse(source);
     this.sourceUrl = this.endpoint.urlpath;
-  }
-
-  startStreamFlush() {
-    this.flushInterval = setInterval(() => {
-      if (!this.paused) {
-        this.emit("flush");
-      }
-    }, this.options.flush);
-  }
-
-  stopStreamFlush() {
-    clearInterval(this.flushInterval);
   }
 
   onControl(data) {}

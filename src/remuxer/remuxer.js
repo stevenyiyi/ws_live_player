@@ -80,7 +80,7 @@ export class Remuxer {
   onTracks(tracks) {
     Log.debug(`ontracks: `, tracks.detail);
     // store available track types
-    for (let track of tracks.detail) {
+    tracks.detail.forEach((track, key, tracks) => {
       this.tracks[track.type] = new Remuxer.TrackConverters[track.type](
         Remuxer.TrackTimescale[track.type],
         Remuxer.TrackScaleFactor[track.type],
@@ -98,9 +98,8 @@ export class Remuxer {
       } else {
         this.tracks[track.type].duration = 1;
       }
-
-      // this.tracks[track.type].duration
-    }
+    });
+    // this.tracks[track.type].duration
     this.mse.setLive(!this.client.seekable);
   }
 
