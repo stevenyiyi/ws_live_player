@@ -30,7 +30,7 @@ export class H265Parser {
 
   static swap32(val) {
     return (
-      ((val & 0xff) << 24) |
+      ((val & 0xff00) << 24) |
       ((val & 0xff00) << 8) |
       ((val >> 8) & 0xff00) |
       ((val >> 24) & 0xff)
@@ -60,8 +60,8 @@ export class H265Parser {
   }
 
   parseVPS(vps) {
-    let config = H265Parser.readVPS(new Uint8Array(vps));
-    this.track.vps = [new Uint8Array(vps)];
+    let config = H265Parser.readVPS(vps);
+    this.track.vps = [vps];
     this.track.codec = "hvc1.";
     let scodecs = [];
     scodecs.push(
@@ -104,15 +104,15 @@ export class H265Parser {
   }
 
   parseSPS(sps) {
-    var config = H265Parser.readSPS(new Uint8Array(sps));
+    var config = H265Parser.readSPS(sps);
     this.track.width = config.width;
     this.track.height = config.height;
     this.track.hasBFrames = config.hasBFrames;
-    this.track.sps = [new Uint8Array(sps)];
+    this.track.sps = [sps];
   }
 
   parsePPS(pps) {
-    this.track.pps = [new Uint8Array(pps)];
+    this.track.pps = [pps];
   }
 
   parseNAL(unit) {
@@ -212,6 +212,7 @@ export class H265Parser {
   }
   // See Rec. ITU-T H.265 v3 (04/2015) Chapter 7.3.2.1 for reference
   static readVPS(data) {
+    data = ExpGolomb.removeH264or5EmulationBytes(data);
     let reader = new ExpGolomb(data);
     // Skip nal head
     reader.skipBits(16);
@@ -246,6 +247,7 @@ export class H265Parser {
 
   /// See Rec. ITU-T H.265 v3 (04/2015) Chapter 7.3.2.2 for reference
   static readSPS(data) {
+    data = ExpGolomb.removeH264or5EmulationBytes(data);
     let decoder = new ExpGolomb(data);
     // Skip nal head
     decoder.skipBits(16);

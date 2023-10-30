@@ -114,6 +114,10 @@ export class NALUAsmHevc {
       rawData.byteLength
     );
 
+    console.log(
+      `onNALFragment byteOffset:${rawData.byteOffset}, byteLength:${rawData.byteLength}`
+    );
+
     let header = NALUAsmHevc.parseNALHeader(data.getUint16(0));
 
     let nal_start_idx = 2;

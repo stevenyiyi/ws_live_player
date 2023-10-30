@@ -224,6 +224,7 @@ export default class RTSPStream extends BaseStream {
         );
       }
       track.config = accessunit.config;
+      track.codec = track.config.codec;
       track.ready = true;
     }
 
@@ -267,46 +268,6 @@ export default class RTSPStream extends BaseStream {
   onDisconnect() {
     this.buffering = false;
     Log.log("onDisconnect!");
-  }
-
-  process(callback) {
-    let tracks = null;
-    if (this.isContainer) {
-      tracks = this.tracks[0];
-    } else {
-      tracks = this.tracks;
-    }
-
-    for (const track of tracks) {
-      if (track.ptype === PayloadType.H264 && track.sps && track.pps) {
-        this.loadedVideoMetadata = true;
-      } else if (
-        track.ptype === PayloadType.H265 &&
-        track.vps &&
-        track.sps &&
-        track.pps
-      ) {
-        this.loadedVideoMetadata = true;
-      } else if (track.type === "audio") {
-        this.loadedAudioMetadata = true;
-      }
-    }
-
-    if (this.hasVideo && this.loadedVideoMetadata && !this.hasAudio) {
-      this.loadedAllMetadata = true;
-    } else if (
-      this.hasVideo &&
-      this.loadedVideoMetadata &&
-      this.hasAudio &&
-      this.loadedAudioMetadata
-    ) {
-      this.loadedAudioMetadata = true;
-    } else if (!this.hasVideo && this.hasAudio && this.loadedAudioMetadata) {
-      this.loadedAudioMetadata = true;
-    }
-
-    if (this.loadedAllMetadata) {
-    }
   }
 
   discardFrame(callback) {
@@ -386,11 +347,10 @@ export default class RTSPStream extends BaseStream {
       tracks = this.tracks;
     }
     Log.log(tracks);
-    let codecs = "";
+    let codecs = [];
     for (const track of tracks) {
-      codecs += track.codecs;
+      codecs.push(track.codec);
     }
-    Log.log(`codec:${codecs}`);
     if (MSE.isSupported(codecs)) {
       this.useMSE = true;
       this.remux = new Remuxer(this.video);

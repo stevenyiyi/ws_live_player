@@ -15,6 +15,9 @@ export class ExpGolomb {
     this.bitsAvailable = 0; // :uint
   }
 
+  numBitsLeft() {
+    return this.bytesAvailable * 8 + this.bitsAvailable;
+  }
   // ():void
   loadWord() {
     var position = this.data.byteLength - this.bytesAvailable,
@@ -137,5 +140,24 @@ export class ExpGolomb {
   // ():int
   readUInt() {
     return this.readBits(32);
+  }
+
+  static removeH264or5EmulationBytes(nal) {
+    let len = nal.byteLength;
+    let i = 0,
+      toSize = 0;
+    let onal = new Uint8Array(len);
+    while (i < len) {
+      if (i + 2 < len && nal[i] === 0 && nal[i + 1] === 0 && nal[i + 2] === 3) {
+        onal[toSize] = onal[toSize + 1] = 0;
+        toSize += 2;
+        i += 3;
+      } else {
+        onal[toSize] = nal[i];
+        toSize += 1;
+        i += 1;
+      }
+    }
+    return onal.subarray(0, toSize);
   }
 }
