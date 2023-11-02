@@ -33,14 +33,14 @@ export class AACPES {
     }
 
     // look for ADTS header (0xFFFx)
-    for (offset = startOffset, len = pes.length; offset < len - 1; offset++) {
+    for (offset = startOffset, len = data.length; offset < len - 1; offset++) {
       if (data[offset] === 0xff && (data[offset + 1] & 0xf0) === 0xf0) {
         break;
       }
     }
     // if ADTS header does not start straight from the beginning of the PES payload, raise an error
     if (offset) {
-      var reason, fatal;
+      let reason, fatal;
       if (offset < len - 1) {
         reason = `PES did not start with ADTS header,offset:${offset}`;
         fatal = false;
@@ -104,6 +104,7 @@ export class AACPES {
         // look for ADTS header (0xFFFx)
         for (; offset < len - 1; offset++) {
           if (data[offset] === 0xff && (data[offset + 1] & 0xf0) === 0xf0) {
+            hdr = null;
             break;
           }
         }

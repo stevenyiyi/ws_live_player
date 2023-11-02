@@ -147,15 +147,13 @@ export class PESAsm {
         this.pesLength -= data.byteLength;
       }
       res = {
-        data: this.pesPkt,
-        length: poffset,
+        data: this.pesPkt.subarray(0, poffset),
         pts: parsed.pts,
         dts: parsed.dts
       };
       /** Log.debug(
         `pid:${this.pid},This PES length:${this.pesLength}, length:${poffset}`
       ); */
-      /// this.pesLength = 0;
     } else {
       this.pesPkt = null;
     }

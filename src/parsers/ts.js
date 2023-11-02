@@ -103,7 +103,7 @@ export class TSParser {
       if (this.pmtParsed && this.pesParsers.has(pid)) {
         let pes = this.pesAsms[pid].feed(payload, payStart);
         if (pes) {
-          /// Log.debug(`pes buffer size:${pes.length},pts:${pes.pts}`);
+          /// Log.debug(`pes buffer size:${pes.data.byteLength},pts:${pes.pts}`);
           return this.pesParsers.get(pid).parse(pes);
         }
       } else {

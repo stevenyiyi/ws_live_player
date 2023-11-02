@@ -17,7 +17,7 @@ export class H26XPES {
   parse(pes) {
     let array = pes.data;
     let i = 0,
-      len = pes.length,
+      len = array.byteLength,
       value,
       overflow,
       state = 0;

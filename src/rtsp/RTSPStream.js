@@ -148,7 +148,6 @@ export default class RTSPStream extends BaseStream {
 
   /// MSE  accessunit event notify
   onSample(accessunit) {
-    Log.debug("on sample!");
     if (
       accessunit.ctype === PayloadType.H264 ||
       accessunit.ctype === PayloadType.H265

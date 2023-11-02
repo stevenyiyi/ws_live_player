@@ -1,5 +1,7 @@
-import { Log } from "../utils/logger.js";
+import { getTagged } from "../utils/logger.js";
 import { HEVC_NALU } from "./nalu-hevc.js";
+const LOG_TAG = "asm:hevc";
+const Log = getTagged(LOG_TAG);
 // TODO: asm.js
 export class NALUAsmHevc {
   constructor() {
@@ -118,10 +120,6 @@ export class NALUAsmHevc {
       rawData.buffer,
       rawData.byteOffset,
       rawData.byteLength
-    );
-
-    console.log(
-      `onNALFragment byteOffset:${rawData.byteOffset}, byteLength:${rawData.byteLength}`
     );
 
     let header = NALUAsmHevc.parseNALHeader(data.getUint16(0));
