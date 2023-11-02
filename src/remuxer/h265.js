@@ -31,7 +31,7 @@ export class H265Remuxer extends BaseRemuxer {
       height: 0,
       timescale: timescale,
       duration: timescale,
-      samples: []
+      samples: [] /** mp4 samples */
     };
     this.samples = [];
     this.lastGopDTS = -99999999999999;
@@ -159,7 +159,7 @@ export class H265Remuxer extends BaseRemuxer {
 
       let unit = sample.unit;
 
-      pts = sample.pts - this.initDTS; // /*Math.round(*/(sample.pts - this.initDTS)/*/this.tsAlign)*this.tsAlign*/;
+      pts = sample.pts - this.initDTS; ///*Math.round(*/(sample.pts - this.initDTS)/*/this.tsAlign)*this.tsAlign*/;
       dts = sample.dts - this.initDTS; ///*Math.round(*/(sample.dts - this.initDTS)/*/this.tsAlign)*this.tsAlign*/;
       // ensure DTS is not bigger than PTS
       dts = Math.min(pts, dts);
@@ -239,7 +239,7 @@ export class H265Remuxer extends BaseRemuxer {
     }
 
     if (!samples.length) return null;
-
+    /** Average duration for samples */
     let avgDuration =
       (this.lastDurations.reduce(function (a, b) {
         return (a | 0) + (b | 0);
