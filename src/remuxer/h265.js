@@ -5,7 +5,7 @@ import { HEVC_NALU } from "../parsers/nalu-hevc.js";
 
 const Log = getTagged("remuxer:h265");
 
-export default class H265Remuxer extends BaseRemuxer {
+export class H265Remuxer extends BaseRemuxer {
   constructor(timescale, scaleFactor = 1, params = {}) {
     super(timescale, scaleFactor);
     this.nextDts = undefined;
@@ -41,10 +41,8 @@ export default class H265Remuxer extends BaseRemuxer {
     this.h265 = new H265Parser(this.mp4track);
 
     if (params.vps) {
-      let arr = new Uint8Array(params.sps);
-      const view = new DataView(arr);
-      let hdr = view.getUint16(0);
-      let type = (hdr >>> 9) & 0x3f;
+      let arr = new Uint8Array(params.vps);
+      let type = (arr[0] >>> 1) & 0x3f;
       if (type === HEVC_NALU.VPS) {
         this.setVPS(arr);
       } else {
@@ -54,9 +52,7 @@ export default class H265Remuxer extends BaseRemuxer {
 
     if (params.sps) {
       let arr = new Uint8Array(params.sps);
-      const view = new DataView(arr);
-      let hdr = view.getUint16(0);
-      let type = (hdr >>> 9) & 0x3f;
+      let type = (arr[0] >>> 1) & 0x3f;
       if (type === HEVC_NALU.SPS) {
         this.setSPS(arr);
       } else {
@@ -66,9 +62,7 @@ export default class H265Remuxer extends BaseRemuxer {
 
     if (params.pps) {
       let arr = new Uint8Array(params.pps);
-      const view = new DataView(arr);
-      let hdr = view.getUint16(0);
-      let type = (hdr >>> 9) & 0x3f;
+      let type = (arr[0] >>> 1) & 0x3f;
       if (type === HEVC_NALU.PPS) {
         this.setPPS(arr);
       } else {

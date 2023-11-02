@@ -7,6 +7,19 @@ export class H264Parser {
     this.firstFound = false;
   }
 
+  static getCodec(sps) {
+    let codec = "avc1.";
+    let codecarray = new DataView(sps.buffer, sps.byteOffset + 1, 4);
+    for (let i = 0; i < 3; ++i) {
+      var h = codecarray.getUint8(i).toString(16);
+      if (h.length < 2) {
+        h = "0" + h;
+      }
+      codec += h;
+    }
+    return codec;
+  }
+
   parseSPS(sps) {
     var config = H264Parser.readSPS(new Uint8Array(sps));
 
@@ -14,16 +27,7 @@ export class H264Parser {
     this.track.height = config.height;
     this.track.hasBFrames = config.hasBFrames;
     this.track.sps = [new Uint8Array(sps)];
-    this.track.codec = "avc1.";
-
-    let codecarray = new DataView(sps.buffer, sps.byteOffset + 1, 4);
-    for (let i = 0; i < 3; ++i) {
-      var h = codecarray.getUint8(i).toString(16);
-      if (h.length < 2) {
-        h = "0" + h;
-      }
-      this.track.codec += h;
-    }
+    this.track.codec = H264Parser.getCodec(sps);
   }
 
   parsePPS(pps) {
@@ -106,10 +110,13 @@ export class H264Parser {
 
   static parceSliceHeader(data) {
     let decoder = new ExpGolomb(data);
-    let first_mb = decoder.readUEG();
+    /** Skip first_mb  */
+    decoder.skipUEG();
     let slice_type = decoder.readUEG();
-    let ppsid = decoder.readUEG();
-    let frame_num = decoder.readUByte();
+    /** Skip pps_id */
+    decoder.skipUEG();
+    /** Skip frame_num */
+    decoder.skipBits(8);
     // console.log(`first_mb: ${first_mb}, slice_type: ${slice_type}, ppsid: ${ppsid}, frame_num: ${frame_num}`);
     return slice_type;
   }
@@ -145,6 +152,7 @@ export class H264Parser {
    * associated video frames.
    */
   static readSPS(data) {
+    data = ExpGolomb.removeH264or5EmulationBytes(data);
     let decoder = new ExpGolomb(data);
     let frameCropLeftOffset = 0,
       frameCropRightOffset = 0,
@@ -152,8 +160,6 @@ export class H264Parser {
       frameCropBottomOffset = 0,
       sarScale = 1,
       profileIdc,
-      profileCompat,
-      levelIdc,
       numRefFramesInPicOrderCntCycle,
       picWidthInMbsMinus1,
       picHeightInMapUnitsMinus1,
@@ -162,9 +168,9 @@ export class H264Parser {
     /// Skip nal head
     decoder.skipBits(8);
     profileIdc = decoder.readUByte(); // profile_idc
-    profileCompat = decoder.readBits(5); // constraint_set[0-4]_flag, u(5)
+    decoder.skipBits(5); // constraint_set[0-4]_flag, u(5)
     decoder.skipBits(3); // reserved_zero_3bits u(3),
-    levelIdc = decoder.readUByte(); //level_idc u(8)
+    decoder.skipBits(8); //level_idc u(8)
     decoder.skipUEG(); // seq_parameter_set_id
     // some profiles have more optional data we don't need
     if (
@@ -341,9 +347,9 @@ export class H264Parser {
 
   static readSliceType(decoder) {
     // skip NALu type
-    decoder.readUByte();
+    decoder.skipBits(8);
     // discard first_mb_in_slice
-    decoder.readUEG();
+    decoder.skipUEG();
     // return slice_type
     return decoder.readUEG();
   }

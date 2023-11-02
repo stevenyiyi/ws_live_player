@@ -36,7 +36,7 @@ export class Remuxer {
   }
 
   constructor(mediaElement) {
-    this.mse = new MSE(mediaElement);
+    this.mse = new MSE([mediaElement]);
     this.eventSource = new EventEmitter();
     this.mseEventSource = new EventSourceWrapper(this.mse.eventSource);
     this.mse_ready = true;
@@ -119,6 +119,7 @@ export class Remuxer {
     let initmse = [];
     let initPts = Infinity;
     let initDts = Infinity;
+    let hasavc = true;
     for (let track_type in this.tracks) {
       let track = this.tracks[track_type];
       if (!MSE.isSupported([track.mp4track.codec])) {
@@ -129,14 +130,18 @@ export class Remuxer {
       tracks.push(track.mp4track);
       this.codecs.push(track.mp4track.codec);
       track.init(initPts, initDts /*, false*/);
-      // initPts = Math.min(track.initPTS, initPts);
-      // initDts = Math.min(track.initDTS, initDts);
+      if (track.mp4track.type === "video") {
+        if (track.mp4track.vps) {
+          hasavc = false;
+        }
+      }
     }
 
     for (let track_type in this.tracks) {
       let track = this.tracks[track_type];
       //track.init(initPts, initDts);
       this.initSegments[track_type] = MP4.initSegment(
+        hasavc,
         [track.mp4track],
         track.duration * track.timescale,
         track.timescale
@@ -222,21 +227,14 @@ export class Remuxer {
     for (let qidx in this.client.sampleQueues) {
       let queue = this.client.sampleQueues[qidx];
       while (queue.length) {
-        let units = queue.shift();
-        if (units) {
-          for (let chunk of units) {
-            if (this.tracks[qidx]) {
-              this.tracks[qidx].remux(chunk);
-            }
-          }
-        } else {
-          if (!this.initialized) {
-            delete this.tracks[qidx];
+        let accessunit = queue.shift();
+        if (this.tracks[qidx]) {
+          for (const unit of accessunit.units) {
+            this.tracks[qidx].remux(unit);
           }
         }
       }
     }
-    // }
   }
 
   onAudioConfig(ev) {

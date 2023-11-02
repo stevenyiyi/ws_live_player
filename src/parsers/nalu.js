@@ -68,10 +68,12 @@ export class NALU {
     }
   }
 
-  constructor(ntype, nri, data) {
+  constructor(ntype, nri, data, dts, pts) {
     this.data = data;
     this.ntype = ntype;
     this.nri = nri;
+    this.dts = dts;
+    this.pts = pts;
     this.sliceType = null;
   }
 

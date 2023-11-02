@@ -7,13 +7,15 @@ const Log = getTagged(LOG_TAG);
 export class MSEBuffer {
   constructor(parent, codec) {
     this.mediaSource = parent.mediaSource;
-    this.video = parent.video;
+    this.players = parent.players;
     this.cleaning = false;
     this.parent = parent;
     this.queue = [];
     this.cleanResolvers = [];
     this.codec = codec;
     this.cleanRanges = [];
+    this.updatesToCleanup = 0;
+    this.firstMoveToBufferStart = true;
 
     Log.debug(`Use codec: ${codec}`);
 
@@ -64,6 +66,14 @@ export class MSEBuffer {
       } else {
         // Log.debug(`buffered: ${this.sourceBuffer.buffered.end(0)}, current ${this.players[0].currentTime}`);
       }
+
+      // cleanup buffer after 100 updates
+      this.updatesToCleanup++;
+      if (this.updatesToCleanup > 100) {
+        this.cleanupBuffer();
+        this.updatesToCleanup = 0;
+      }
+
       this.feedNext();
     });
 
@@ -87,6 +97,30 @@ export class MSEBuffer {
       this.feedNext();
     }
     // TODO: cleanup every hour for live streams
+  }
+
+  cleanupBuffer() {
+    if (this.sourceBuffer.buffered.length && !this.sourceBuffer.updating) {
+      let currentPlayTime = this.players[0].currentTime;
+      let startBuffered = this.sourceBuffer.buffered.start(0);
+      let endBuffered = this.sourceBuffer.buffered.end(0);
+      let bufferedDuration = endBuffered - startBuffered;
+      let removeEnd = endBuffered - this.parent.bufferDuration;
+
+      if (
+        removeEnd > 0 &&
+        bufferedDuration > this.parent.bufferDuration &&
+        currentPlayTime > startBuffered &&
+        currentPlayTime > removeEnd
+      ) {
+        try {
+          Log.debug("Remove media segments", startBuffered, removeEnd);
+          this.sourceBuffer.remove(startBuffered, removeEnd);
+        } catch (e) {
+          Log.warn("Failed to cleanup buffer");
+        }
+      }
+    }
   }
 
   destroy() {
@@ -136,7 +170,6 @@ export class MSEBuffer {
     // Log.debug("feed next ", this.sourceBuffer.updating);
     if (!this.sourceBuffer.updating && !this.cleaning && this.queue.length) {
       this.doAppend(this.queue.shift());
-      // TODO: if is live and current position > 1hr => clean all and restart
     }
   }
 
@@ -148,8 +181,8 @@ export class MSEBuffer {
     }
     let range = this.cleanRanges.shift();
     Log.debug(`${this.codec} remove range [${range[0]} - ${range[1]}). 
-                    \nUpdating: ${this.sourceBuffer.updating}
-                    `);
+                  \nUpdating: ${this.sourceBuffer.updating}
+                  `);
     this.cleaning = true;
     this.sourceBuffer.remove(range[0], range[1]);
   }
@@ -179,7 +212,7 @@ export class MSEBuffer {
             `Clear [${removeStart}, ${removeBound}), leave [${removeBound}, ${removeEnd}]`
           );
           removeEnd = removeBound;
-          if (removeEnd !== removeStart) {
+          if (removeEnd != removeStart) {
             this.cleanRanges.push([removeStart, removeEnd]);
           }
           continue; // Do not cleanup buffered range after current position
@@ -225,17 +258,26 @@ export class MSEBuffer {
 
   doAppend(data) {
     // console.log(MP4Inspect.mp4toJSON(data));
-    let err = this.video.error;
+    let err = this.players[0].error;
     if (err) {
       Log.error(`Error occured: ${MSE.ErrorNotes[err.code]}`);
       try {
-        this.video.stop();
+        this.players.forEach((video) => {
+          video.stop();
+        });
         this.mediaSource.endOfStream();
       } catch (e) {}
       this.parent.eventSource.dispatchEvent("error");
     } else {
       try {
         this.sourceBuffer.appendBuffer(data);
+        if (this.firstMoveToBufferStart && this.sourceBuffer.buffered.length) {
+          this.players[0].currentTime = this.sourceBuffer.buffered.start(0);
+          if (this.players[0].autoPlay) {
+            this.players[0].start();
+          }
+          this.firstMoveToBufferStart = false;
+        }
       } catch (e) {
         if (e.name === "QuotaExceededError") {
           Log.debug(`${this.codec} quota fail`);
@@ -290,15 +332,18 @@ export class MSE {
     );
   }
 
-  constructor(video) {
-    this.video = video;
-    video.onplaying = function () {
-      this.playing = true;
-    };
-    video.onpause = function () {
-      this.playing = false;
-    };
-
+  constructor(players) {
+    this.players = players;
+    const playing = this.players.map((video, idx) => {
+      video.onplaying = function () {
+        playing[idx] = true;
+      };
+      video.onpause = function () {
+        playing[idx] = false;
+      };
+      return !video.paused;
+    });
+    this.playing = playing;
     this.mediaSource = new MediaSource();
     this.eventSource = new EventEmitter(this.mediaSource);
     this.reset();
@@ -320,10 +365,12 @@ export class MSE {
   }
 
   play() {
-    if (this.video.paused && !this.playing) {
-      Log.debug(`player: play`);
-      this.video.play();
-    }
+    this.players.forEach((video, idx) => {
+      if (video.paused && !this.playing[idx]) {
+        Log.debug(`player ${idx}: play`);
+        video.play();
+      }
+    });
   }
 
   setLive(is_live) {
@@ -334,10 +381,12 @@ export class MSE {
   }
 
   resetBuffers() {
-    if (!this.video.paused && this.playing) {
-      this.video.pause();
-      this.video.currentTime = 0;
-    }
+    this.players.forEach((video, idx) => {
+      if (!video.paused && this.playing[idx]) {
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
 
     let promises = [];
     for (let buffer of this.buffers.values()) {
@@ -353,7 +402,9 @@ export class MSE {
 
   clear() {
     this.reset();
-    this.video.src = URL.createObjectURL(this.mediaSource);
+    this.players.forEach((video) => {
+      video.src = URL.createObjectURL(this.mediaSource);
+    });
 
     return this.setupEvents();
   }
@@ -378,7 +429,6 @@ export class MSE {
           this.eventSource.dispatchEvent("sourceclosed");
         }
       };
-      /// Subscribe media source extensions event
       this.eventSource.addEventListener("sourceopen", this._sourceOpen);
       this.eventSource.addEventListener("sourceended", this._sourceEnded);
       this.eventSource.addEventListener("sourceclose", this._sourceClose);
@@ -392,7 +442,7 @@ export class MSE {
       this.buffers[track].destroy();
       delete this.buffers[track];
     }
-    if (this.mediaSource.readyState === "open") {
+    if (this.mediaSource.readyState == "open") {
       this.mediaSource.duration = 0;
       this.mediaSource.endOfStream();
     }

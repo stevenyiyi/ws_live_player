@@ -140,11 +140,13 @@ export class HEVC_NALU {
    *        +-------------+-----------------+
    *        Figure 1: The Structure of the HEVC NAL Unit Header
    */
-  constructor(ntype, layerid, tid, data) {
+  constructor(ntype, layerid, tid, data, dts, pts) {
     this.data = data;
     this.ntype = ntype;
     this.layerid = layerid;
     this.tid = tid;
+    this.dts = dts;
+    this.pts = pts;
     this.sliceType = null;
   }
 

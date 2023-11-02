@@ -59,10 +59,8 @@ export class H265Parser {
     return H265Parser.trim_leading_zeros(sbytes);
   }
 
-  parseVPS(vps) {
-    let config = H265Parser.readVPS(vps);
-    this.track.vps = [vps];
-    this.track.codec = "hvc1.";
+  static getCodecByConfig(config) {
+    let codec = "hvc1.";
     let scodecs = [];
     scodecs.push(
       `${H265Parser.generalProfileSpaceString(config.GeneralProfileSpace)}${
@@ -98,9 +96,20 @@ export class H265Parser {
         contraintsBuf[i].toString(16).padStart(2, "0").toUpperCase()
       );
     }
+    codec += scodecs.join(".");
+    return codec;
+  }
 
-    this.track.codec += scodecs.join(".");
+  static getCodec(vps) {
+    let config = H265Parser.readVPS(vps);
+    return H265Parser.getCodecByConfig(config);
+  }
+
+  parseVPS(vps) {
+    this.track.vps = [vps];
+    let config = H265Parser.readVPS(vps);
     this.track.vpsconfig = config;
+    this.track.codec = H265Parser.getCodecByConfig(config);
   }
 
   parseSPS(sps) {

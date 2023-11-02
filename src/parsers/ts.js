@@ -240,8 +240,11 @@ export class TSParser {
         track.type === PayloadType.AAC
       ) {
         track.hasCodecConf = true;
+        track.params = {};
+        track.ready = false;
       } else {
         track.hasCodecConf = false;
+        track.ready = true;
       }
     }
     // TODO: notify about tracks

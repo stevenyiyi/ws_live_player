@@ -7,6 +7,8 @@ import { RTSPClient } from "./RTSPClient";
 import { WebsocketTransport } from "../websocket";
 import { H264Parser } from "../parsers/h264.js";
 import { H265Parser } from "../parsers/h265.js";
+import { NALU } from "../parsers/nalu.js";
+import { HEVC_NALU } from "../parsers/nalu-hevc.js";
 const LOG_TAG = "RTSPStream";
 const Log = getTagged(LOG_TAG);
 
@@ -96,21 +98,13 @@ export default class RTSPStream extends BaseStream {
       this.isContainer = true;
     } else {
       this.isContainer = false;
-      this.seekable = this.client.seekable;
-      this.duration = this.client.duration;
-
-      this.sampleQueues[
-        PayloadType.string_map[track.rtpmap[track.fmt[0]].name]
-      ] = [];
-      this._decideMSE();
-      if (this.useMSE) {
-        this.eventSource.dispatchEvent("tracks", tracks);
-      } else {
-        this.eventSource.dispatchEvent(
-          "error",
-          "Codec not supported using MSE!"
-        );
+      for (const track of tracks) {
+        /** Initialize samplesQueues */
+        this.sampleQueues[
+          PayloadType.string_map[track.rtpmap[track.fmt[0]].name]
+        ] = [];
       }
+      this._onTracksReady(tracks);
     }
   }
 
@@ -121,6 +115,7 @@ export default class RTSPStream extends BaseStream {
       track.duration = this.tracks[0].duration;
       track.track = this.tracks[0].track;
       track.offset = this.tracks[0].offset;
+      this.sampleQueues[track.type] = [];
     }
     this.tracks[0].tracks = tracks;
 
@@ -141,10 +136,11 @@ export default class RTSPStream extends BaseStream {
     this.seekable = this.client.seekable;
     this.duration = this.client.duration;
 
-    this._decideMSE();
+    this._decideMSE(tracks);
 
     if (this.useMSE) {
       this.eventSource.dispatchEvent("tracks", tracks);
+      this.startStreamFlush();
     } else {
       this.eventSource.dispatchEvent("error", "Codec not supported using MSE!");
     }
@@ -193,37 +189,46 @@ export default class RTSPStream extends BaseStream {
       return;
     }
 
-    if (track.type === PayloadType.H264 && (!track.sps || !track.pps)) {
-      if (!track.parser) {
-        track.parser = new H264Parser(track);
-      }
+    if (
+      track.type === PayloadType.H264 &&
+      (!track.params.sps || !track.params.pps)
+    ) {
       for (const frame of accessunit.units) {
-        track.parser.parseNAL(frame);
+        if (frame.type() === NALU.SPS) {
+          track.params.sps = frame.getData().subarray(4);
+        } else if (frame.type() === NALU.PPS) {
+          track.params.pps = frame.getData().subarray(4);
+        }
       }
-      if (track.sps && track.pps) {
+      if (track.params.sps && track.params.pps) {
         track.ready = true;
+        track.codec = H264Parser.getCodec(track.params.sps);
       }
     } else if (
       track.type === PayloadType.H265 &&
-      (!track.vps || !track.sps || !track.pps)
+      (!track.params.vps || !track.params.sps || !track.params.pps)
     ) {
-      if (!track.parser) {
-        track.parser = new H265Parser(track);
-      }
       for (const frame of accessunit.units) {
-        track.parser.parseNAL(frame);
+        if (frame.type() === HEVC_NALU.VPS) {
+          track.params.vps = frame.getData().subarray(4);
+        } else if (frame.type() === HEVC_NALU.SPS) {
+          track.params.sps = frame.getData().subarray(4);
+        } else if (frame.type() === HEVC_NALU.PPS) {
+          track.params.pps = frame.getData().subarray(4);
+        }
       }
-      if (track.vps && track.sps && track.pps) {
+      if (track.params.vps && track.params.sps && track.params.pps) {
         track.ready = true;
+        track.codec = H265Parser.getCodec(track.params.vps);
       }
-    } else if (track.type === PayloadType.AAC && !track.config) {
+    } else if (track.type === PayloadType.AAC && !track.params.config) {
       if (!accessunit.config) {
         throw new Error(
           "Receive aac accessunit, but have not config information!"
         );
       }
-      track.config = accessunit.config;
-      track.codec = track.config.codec;
+      track.params.config = accessunit.config;
+      track.codec = accessunit.config.codec;
       track.ready = true;
     }
 
@@ -232,7 +237,10 @@ export default class RTSPStream extends BaseStream {
       let f = true;
       const tracks = this.tracks[0].tracks;
       for (const t of tracks) {
-        f = !!t.ready;
+        if (!t.ready) {
+          f = false;
+          break;
+        }
       }
       if (f && !this.tracksReady) {
         this._onTracksReady(tracks);
@@ -252,7 +260,7 @@ export default class RTSPStream extends BaseStream {
       this.lastKeyframeTimestamp = accessunit.pts;
     }
 
-    this.eventSource.dispatchEvent("sample", accessunit);
+    this.sampleQueues[accessunit.ctype].push(accessunit);
   }
 
   onClear() {
@@ -335,23 +343,11 @@ export default class RTSPStream extends BaseStream {
     return timescale;
   }
 
-  _decideMSE() {
-    let tracks = null;
-    if (this.isContainer) {
-      tracks = this.tracks[0].tracks;
-    } else {
-      tracks = this.tracks;
-    }
-    Log.log(tracks);
+  _decideMSE(tracks) {
     let codecs = [];
+    Log.debug("MSE tracks:", tracks);
     for (const track of tracks) {
-      if (this.isContainer) {
-        this.sampleQueues[track.type] = [];
-      } else {
-        this.sampleQueues[
-          PayloadType.string_map[track.rtpmap[track.fmt[0]].name]
-        ] = [];
-      }
+      Log.debug(`track type:${track.type},codec:${track.codec}`);
       codecs.push(track.codec);
     }
     if (MSE.isSupported(codecs)) {
@@ -359,7 +355,9 @@ export default class RTSPStream extends BaseStream {
       this.remux = new Remuxer(this.video);
       this.remux.attachClient(this);
     } else {
-      Log.error(`MSE not supported codec:${codecs}`);
+      Log.error(
+        `MSE not supported codec:video/mp4; codecs="${codecs.join(",")}"`
+      );
     }
   }
 

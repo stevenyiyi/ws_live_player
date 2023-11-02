@@ -4,7 +4,7 @@
  */
 
 export class MP4 {
-  static init(hasavc = true) {
+  static init(hasavc = true, hashvc = false) {
     MP4.types = {
       avc1: [], // codingname
       avcC: [],
@@ -980,7 +980,11 @@ export class MP4 {
     if (track.type === "audio") {
       return MP4.box(MP4.types.stsd, MP4.STSD, MP4.mp4a(track));
     } else {
-      return MP4.box(MP4.types.stsd, MP4.STSD, MP4.avc1(track));
+      if (track.vps) {
+        return MP4.box(MP4.types.stsd, MP4.STSD, MP4.hvc1(track));
+      } else {
+        return MP4.box(MP4.types.stsd, MP4.STSD, MP4.avc1(track));
+      }
     }
   }
 
@@ -1232,9 +1236,9 @@ export class MP4 {
     return MP4.box(MP4.types.trun, array);
   }
 
-  static initSegment(tracks, duration, timescale) {
+  static initSegment(hasavc, tracks, duration, timescale) {
     if (!MP4.types) {
-      MP4.init();
+      MP4.init(hasavc);
     }
     var movie = MP4.moov(tracks, duration, timescale),
       result;

@@ -2,6 +2,7 @@ import { getTagged } from "../utils/logger.js";
 import { ADTS } from "./adts.js";
 import { PayloadType } from "../StreamDefine.js";
 import { MediaAccessunit } from "../MediaAccessunit.js";
+import { AACFrame } from "./aac_frame.js";
 const LOG_TAG = "parses:pes_aac";
 const Log = getTagged(LOG_TAG);
 export class AACPES {
@@ -93,7 +94,10 @@ export class AACPES {
         res.pts = stamp;
         res.dts = stamp;
         res.units.push(
-          data.subarray(offset + hdr.offset, offset + hdr.offset + hdr.size)
+          new AACFrame(
+            data.subarray(offset + hdr.offset, offset + hdr.offset + hdr.size),
+            stamp
+          )
         );
         offset += hdr.offset + hdr.size;
         frameIndex++;

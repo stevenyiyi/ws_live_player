@@ -46,7 +46,9 @@ export class H26XPES {
           } else if (value === 1 && i < len) {
             if (lastUnitStart) {
               let nalu = this.naluasm.onNALUFragment(
-                array.subarray(lastUnitStart, i - state - 1)
+                array.subarray(lastUnitStart, i - state - 1),
+                pes.dts,
+                pes.dts
               );
               if (nalu) {
                 for (const enalu of nalu) {
@@ -77,7 +79,9 @@ export class H26XPES {
     }
     if (lastUnitStart) {
       let nalu = this.naluasm.onNALUFragment(
-        array.subarray(lastUnitStart, len)
+        array.subarray(lastUnitStart, len),
+        pes.dts,
+        pes.pts
       );
       if (nalu) {
         for (const enalu of nalu) {
@@ -88,7 +92,7 @@ export class H26XPES {
     this.lastUnit = units[units.length - 1];
     return new MediaAccessunit(
       this.pesType === 0x1b ? PayloadType.H264 : PayloadType.H265,
-      pes.pts,
+      pes.dts,
       pes.dts,
       units
     );

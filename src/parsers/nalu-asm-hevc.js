@@ -22,16 +22,18 @@ export class NALUAsmHevc {
     };
   }
 
-  parseSingleNALUPacket(rawData, header) {
+  parseSingleNALUPacket(rawData, header, dts, pts) {
     return new HEVC_NALU(
       header.type,
       header.layerid,
       header.tid,
-      rawData.subarray(0)
+      rawData.subarray(0),
+      dts,
+      pts
     );
   }
 
-  parseAggregationPacket(rawData, header) {
+  parseAggregationPacket(rawData, header, dts, pts) {
     let data = new DataView(
       rawData.buffer,
       rawData.byteOffset,
@@ -53,7 +55,9 @@ export class NALUAsmHevc {
       nal_start_idx++;
       let nalu = this.parseSingleNALUPacket(
         rawData.subarray(nal_start_idx, nal_start_idx + size),
-        header
+        header,
+        dts,
+        pts
       );
       if (nalu !== null) {
         ret.push(nalu);
@@ -63,7 +67,7 @@ export class NALUAsmHevc {
     return ret;
   }
 
-  parseFragmentationUnit(rawData, header) {
+  parseFragmentationUnit(rawData, header, dts, pts) {
     /* The FU header consists of an S bit, an E bit, and a 6-bit FuType
      *        field, as shown in Figure 10.
      *        +---------------+
@@ -91,7 +95,9 @@ export class NALUAsmHevc {
         payload_type,
         header.layerid,
         header.tid,
-        rawData.subarray(nal_start_idx)
+        rawData.subarray(nal_start_idx),
+        dts,
+        pts
       );
     }
     if (this.fragmented_nalu && this.fragmented_nalu.ntype === payload_type) {
@@ -107,7 +113,7 @@ export class NALUAsmHevc {
     return null;
   }
 
-  onNALUFragment(rawData) {
+  onNALUFragment(rawData, dts, pts) {
     let data = new DataView(
       rawData.buffer,
       rawData.byteOffset,
@@ -126,17 +132,23 @@ export class NALUAsmHevc {
     if (header.type >= 1 && header.type <= 47) {
       unit = this.parseSingleNALUPacket(
         rawData.subarray(nal_start_idx),
-        header
+        header,
+        dts,
+        pts
       );
     } else if (HEVC_NALU.FU === header.type) {
       unit = this.parseFragmentationUnit(
         rawData.subarray(nal_start_idx),
-        header
+        header,
+        dts,
+        pts
       );
     } else if (HEVC_NALU.STAP === header.type) {
       return this.parseAggregationPacket(
         rawData.subarray(nal_start_idx),
-        header
+        header,
+        dts,
+        pts
       );
     } else {
       /* 30 - 31 is undefined, ignore those (RFC3984). */

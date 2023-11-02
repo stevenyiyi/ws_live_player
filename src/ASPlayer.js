@@ -74,13 +74,12 @@ export class ASPlayer {
   _is_in_buffered(current_time) {
     let buffereds = this._video.buffered;
     let f = false;
-    for (let i = 0; i < buffereds.length; i++) {
+    if (buffereds.length > 0) {
       if (
-        current_time >= buffereds[i].start(0) &&
-        current_time <= buffereds[i].end(0)
+        current_time >= buffereds.start(0) &&
+        current_time <= buffereds.end(0)
       ) {
         f = true;
-        break;
       }
     }
     return f;
