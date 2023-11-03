@@ -42,7 +42,6 @@ export class MSEBuffer {
       // this.updating = false;
       if (this.cleaning) {
         Log.debug(`${this.codec} cleaning end`);
-
         try {
           if (
             this.sourceBuffer.buffered.length &&
@@ -64,7 +63,16 @@ export class MSEBuffer {
           return;
         }
       } else {
-        // Log.debug(`buffered: ${this.sourceBuffer.buffered.end(0)}, current ${this.players[0].currentTime}`);
+        //hack to get safari on mac to start playing, video.currentTime gets stuck on 0
+        if (
+          !this.sourceBuffer.updating &&
+          this.mediaSource.duration !== Number.POSITIVE_INFINITY &&
+          this.players[0].currentTime === 0 &&
+          this.mediaSource.duration > 0
+        ) {
+          this.players[0].currentTime = this.mediaSource.duration - 1;
+          this.mediaSource.duration = Number.POSITIVE_INFINITY;
+        }
       }
 
       // cleanup buffer after 100 updates
@@ -257,7 +265,6 @@ export class MSEBuffer {
   }
 
   doAppend(data) {
-    // console.log(MP4Inspect.mp4toJSON(data));
     let err = this.players[0].error;
     if (err) {
       Log.error(`Error occured: ${MSE.ErrorNotes[err.code]}`);
@@ -344,6 +351,7 @@ export class MSE {
       return !video.paused;
     });
     this.playing = playing;
+    this.bufferDuration_ = 120;
     this.mediaSource = new MediaSource();
     this.eventSource = new EventEmitter(this.mediaSource);
     this.reset();
