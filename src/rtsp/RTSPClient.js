@@ -11,7 +11,7 @@ import { PayloadType } from "../StreamDefine.js";
 import { base64ToArrayBuffer, hexToByteArray } from "../utils/binary.js";
 import { AACParser } from "../parsers/aac.js";
 import { RTSPSession } from "./RTSPSession.js";
-import { BaseClient } from "../base_client.js";
+import { BaseClient } from "../BaseClient.js";
 
 const LOG_TAG = "client:rtsp";
 const Log = getTagged(LOG_TAG);
