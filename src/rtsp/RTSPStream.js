@@ -85,9 +85,10 @@ export default class RTSPStream extends BaseStream {
     return this.client.stop();
   }
 
-  destory() {
+  destroy() {
+    Log.debug("destroy");
     this.client.reset();
-    this.client.destory();
+    this.client.destroy();
     /** Clear sampleQueues */
     this.sampleQueues = {};
     /** Clear tracks */
@@ -383,6 +384,7 @@ export default class RTSPStream extends BaseStream {
     if (MSE.isSupported(codecs)) {
       this.useMSE = true;
       this.remux = new Remuxer(this.video);
+      this.remux.MSE.bufferedDuration = this.bufferedDuration;
       this.remux.attachClient(this);
     } else {
       Log.error(

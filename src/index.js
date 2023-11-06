@@ -13,6 +13,7 @@ let player = new ASPlayer({
   rtspurl:
     "rtsp://50011200121328555763:991100@localhost:5554/live/50011200121328555763",
   cacheSize: 1000,
-  video: video
+  video: video,
+  bufferedDuration: 15
 });
 player.start();

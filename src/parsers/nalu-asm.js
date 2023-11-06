@@ -1,6 +1,7 @@
-import { Log } from "../utils/logger.js";
+import { getTagged } from "../utils/logger.js";
 import { NALU } from "./nalu.js";
-
+const LOG_TAG = "asm:avc";
+const Log = getTagged(LOG_TAG);
 // TODO: asm.js
 export class NALUAsm {
   constructor() {
@@ -127,7 +128,7 @@ export class NALUAsm {
       );
     } else {
       /* 30 - 31 is undefined, ignore those (RFC3984). */
-      Log.log("Undefined NAL unit, type: " + header.type);
+      Log.warn("Undefined NAL unit, type: " + header.type);
       return null;
     }
     if (unit) {

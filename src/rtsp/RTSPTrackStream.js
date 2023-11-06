@@ -19,6 +19,7 @@ export class RTSPTrackStream {
   }
 
   reset() {
+    Log.debug("reset!!!");
     this.stopKeepAlive();
     this.client.forgetRTPChannel(this.rtpChannel);
     this.client = null;
@@ -144,10 +145,7 @@ export class RTSPTrackStream {
         if (sessionParams["timeout"]) {
           this.keepaliveInterval = Number(sessionParams["timeout"]) * 500; // * 1000 / 2
         }
-        /*if (!/RTP\/AVP\/TCP;unicast;interleaved=/.test(_data.headers["transport"])) {
-                // TODO: disconnect stream and notify client
-                throw new Error("Connection broken");
-            }*/
+        Log.debug(`add rtp channel:${this.rtpChannel}`);
         this.client.useRTPChannel(this.rtpChannel);
         this.startKeepAlive();
         return { track: this.track, data: _data, session: this.session };

@@ -69,9 +69,9 @@ export default class BaseStream {
     throw Error("Call stop in abstract class!");
   }
 
-  /// destory
-  destory() {
-    throw Error("Call destory in abstract class!");
+  /// destroy
+  destroy() {
+    throw Error("Call destroy in abstract class!");
   }
 
   /// Array of array [[s, e],...]

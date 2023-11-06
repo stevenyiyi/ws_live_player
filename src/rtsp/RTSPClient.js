@@ -620,6 +620,7 @@ export class RTSPClientSM extends StateMachine {
         });
       })
       .catch((e) => {
+        Log.error("SETUP error:", e);
         this.parent.emit("error", e);
         this.stop();
         this.reset();

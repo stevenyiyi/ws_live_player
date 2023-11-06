@@ -90,7 +90,7 @@ export class MSEBuffer {
       if (this.mediaSource.sourceBuffers.length) {
         this.mediaSource.removeSourceBuffer(this.sourceBuffer);
       }
-      this.parent.eventSource.dispatchEvent("error");
+      this.parent.eventSource.dispatchEvent("error", e);
     });
 
     this.eventSource.addEventListener("abort", (e) => {
@@ -98,7 +98,7 @@ export class MSEBuffer {
       if (this.mediaSource.sourceBuffers.length) {
         this.mediaSource.removeSourceBuffer(this.sourceBuffer);
       }
-      this.parent.eventSource.dispatchEvent("error");
+      this.parent.eventSource.dispatchEvent("error", e);
     });
 
     if (!this.sourceBuffer.updating) {
@@ -126,6 +126,7 @@ export class MSEBuffer {
           this.sourceBuffer.remove(startBuffered, removeEnd);
         } catch (e) {
           Log.warn("Failed to cleanup buffer");
+          this.parent.eventSource.dispatchEvent("error", e);
         }
       }
     }

@@ -172,7 +172,10 @@ export class TSParser {
         ].includes(pesType)
       ) {
         if (this.pesParserTypes.has(pesType) && !this.pesParsers.has(pid)) {
-          this.pesParsers.set(pid, new (this.pesParserTypes.get(pesType))());
+          this.pesParsers.set(
+            pid,
+            new this.pesParserTypes.get(pesType)(pesType)
+          );
           this.pesAsms[pid] = new PESAsm(pid);
           switch (pesType) {
             case PESType.AAC:

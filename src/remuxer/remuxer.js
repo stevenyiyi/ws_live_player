@@ -6,6 +6,7 @@ import { H264Remuxer } from "./h264.js";
 import { H265Remuxer } from "./h265.js";
 import { MSE } from "../presentation/mse.js";
 import { PayloadType } from "../StreamDefine.js";
+import { ASMediaError } from "../utils/ASMediaError.js";
 
 const LOG_TAG = "remuxer";
 const Log = getTagged(LOG_TAG);
@@ -168,7 +169,13 @@ export class Remuxer {
           // this.enabled = true;
         });
     } else {
-      throw new Error("Codecs are not supported");
+      this.eventSource.dispatchEvent(
+        "error",
+        new ASMediaError(
+          ASMediaError.MEDIA_ERR_DECODE,
+          `Codecs:${this.codecs} are not supported`
+        )
+      );
     }
   }
 
