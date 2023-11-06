@@ -394,7 +394,32 @@ export default class RTSPStream extends BaseStream {
     }
   }
 
-  _getAudioInfo() {}
+  _getAudioInfo() {
+    /// get audio info
+    let tracks = null;
+    if (this.isContainer) {
+      tracks = this.tracks[0].tracks;
+    } else {
+      tracks = this.tracks;
+    }
+    if (!tracks) {
+      return null;
+    }
+    for (const track of tracks) {
+      if (track.type === "audio") {
+        return {
+          codec: track.params.config.codec,
+          samplerate: track.params.config.samplerate,
+          channel: track.params.config.channel
+        };
+      }
+    }
+    return null;
+  }
+
+  _getVideoInfo() {
+    /// get video info
+  }
 
   _getHasAudio() {
     let f = false;

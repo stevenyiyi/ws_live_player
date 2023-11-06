@@ -161,7 +161,7 @@ export class H264Parser {
       sarScale = 1,
       profileIdc,
       numRefFramesInPicOrderCntCycle,
-      fixedFramerate = true,
+      fixedFrameRate = true,
       frameDuration = 0,
       picWidthInMbsMinus1,
       picHeightInMapUnitsMinus1,
@@ -345,7 +345,7 @@ export class H264Parser {
         (frameMbsOnlyFlag ? 2 : 4) *
           (frameCropTopOffset + frameCropBottomOffset),
       hasBFrames: picOrderCntType === 2 ? false : true,
-      fixedFrameRate: fixedFramerate,
+      fixedFrameRate: fixedFrameRate,
       frameDuration: frameDuration
     };
   }

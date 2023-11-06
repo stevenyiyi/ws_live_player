@@ -57,9 +57,9 @@ export class ADTS {
       configLen = 2;
       extSamplingIdx = freq;
     } else {
-      /*  for other browsers (chrome ...)
-             always force audio type to be HE-AAC SBR, as some browsers do not support audio codec switch properly (like Chrome ...)
-             */
+      /**  for other browsers (chrome ...)
+      /**  always force audio type to be HE-AAC SBR, as some browsers do not support audio codec switch properly (like Chrome ...)
+      */
       profile = 5;
       configLen = 4;
       // if (manifest codec is HE-AAC or HE-AACv2) OR (manifest codec not specified AND frequency less than 24kHz)
