@@ -2,19 +2,12 @@ import { EventEmitter } from "./utils/event.js";
 export default class BaseStream {
   constructor(options) {
     this.eventSource = new EventEmitter();
-    this.cacheSize = options.cacheSize || 500; //default ms
-    this.flushInterval = options.flush || 100;
+    this.cacheSize = options.cacheSize || 500; // default ms
+    this.flushInterval = options.flush || 100; // default ms
     this.wsurl = options.wsurl;
     this.rtspurl = options.rtspurl;
     this.video = options.video;
-
-    this._frameSink = options.frameSink;
-
-    this._videoTrack = null;
-    this._audioTrack = null;
-    this._canvasStream = null;
-
-    this._videoInfo = null;
+    this.bufferedDuration = options.bufferedDuration || 120;
 
     /// Properties defines
     Object.defineProperties(this, {
@@ -43,7 +36,17 @@ export default class BaseStream {
       seeking: { value: false, writable: true },
       waiting: { value: false, writable: true },
       seekable: { value: false, writable: true },
-      eof: { value: false, writable: true }
+      eof: { value: false, writable: true },
+      audioInfo: {
+        get: function getAudioInfo() {
+          return this._getAudioInfo();
+        }
+      },
+      videoInfo: {
+        get: function getVideoInfo() {
+          return this._getVideoInfo();
+        }
+      }
     });
   }
 
@@ -109,5 +112,13 @@ export default class BaseStream {
 
   _getHasBFrames() {
     throw Error("Call _getHasVideo() in abstract class!");
+  }
+
+  _getAudioInfo() {
+    throw Error("Call _getAudioInfo() in abstract class!");
+  }
+
+  _getVideoInfo() {
+    throw Error("Call _getVideoInfo() in abstract class!");
   }
 }

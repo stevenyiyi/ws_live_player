@@ -1,4 +1,5 @@
 import { getTagged } from "../utils/logger.js";
+import { ASMediaError } from "../utils/ASMediaError.js";
 import { Url } from "../utils/url.js";
 import { StateMachine } from "../utils/statemachine.js";
 import { SDPParser } from "./sdp.js";
@@ -20,12 +21,6 @@ export class RTSPClient extends BaseClient {
   constructor(options) {
     super(options);
     this.clientSM = new RTSPClientSM(this);
-    this.clientSM.ontracks = (tracks) => {
-      this.emit("tracks", tracks);
-    };
-    this.clientSM.ontstracks = (tracks) => {
-      this.emit("tstracks", tracks);
-    };
   }
 
   static streamType() {
@@ -168,11 +163,9 @@ export class RTSPClientSM extends StateMachine {
     this.payParser = new RTPPayloadParser();
     this.rtp_channels = new Set();
     this.sessions = {};
-    this.ontracks = null;
-    this.ontstracks = null;
     this.promises = {};
     this.payParser.on("tracks", (tracks) => {
-      this.ontstracks(tracks);
+      this.parent.emit("tstracks", tracks);
     });
 
     this.payParser.on("sample", (sample) => {
@@ -269,7 +262,10 @@ export class RTSPClientSM extends StateMachine {
       delete this.promises[Number(cseq)];
     } else {
       this.promises[Number(cseq)].reject(
-        new Error("Not found CSeq in RTSP response header!")
+        new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+          code: 513,
+          statusLine: "Not found CSeq in RTSP response header!"
+        })
       );
     }
   }
@@ -279,7 +275,14 @@ export class RTSPClientSM extends StateMachine {
     if (this.rtp_channels.has(channel)) {
       this.onRTP({ packet: data.subarray(4), type: channel });
     } else {
-      Log.error(`Not found channel:${channel}!`);
+      Log.error(`Not found RTSP channel:${channel}!`);
+      this.parent.emit(
+        "error",
+        new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+          code: 512,
+          statusLine: `Not found RTSP channel:${channel}!`
+        })
+      );
     }
   }
 
@@ -378,7 +381,13 @@ export class RTSPClientSM extends StateMachine {
         if (result === 0) {
           Log.log(`send data success,cseq:${this.cSeq}`);
         } else {
-          reject(Error("WS send data error!"));
+          delete this.promises[this.cSeq];
+          reject(
+            new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+              code: 462,
+              statusLine: "462 Destination Unreachable"
+            })
+          );
         }
       });
     });
@@ -585,7 +594,7 @@ export class RTSPClientSM extends StateMachine {
             params: params,
             duration: params.duration
           };
-          console.log(res, this.timeOffset);
+
           let session = data.headers.session.split(";")[0];
           if (!this.sessions[session]) {
             this.sessions[session] = new RTSPSession(this, session);
@@ -601,9 +610,7 @@ export class RTSPClientSM extends StateMachine {
           sessionPromises.push(this.sessions[session].start());
         }
         return Promise.all(sessionPromises).then(() => {
-          if (this.ontracks) {
-            this.ontracks(tracks);
-          }
+          this.parent.emit("tracks", tracks);
         });
       })
       .catch((e) => {

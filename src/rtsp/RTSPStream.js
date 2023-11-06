@@ -1,4 +1,5 @@
 import { getTagged } from "../utils/logger.js";
+import { ASMediaError } from "../utils/ASMediaError.js";
 import BaseStream from "../BaseStream.js";
 import { PayloadType } from "../StreamDefine.js";
 import { Remuxer } from "../remuxer/remuxer.js";
@@ -21,7 +22,6 @@ export default class RTSPStream extends BaseStream {
     this.remux = null;
     this.isContainer = false;
 
-    this.onseek = null;
     this.promises = {};
 
     this.firstAudioPts = -1;
@@ -39,6 +39,7 @@ export default class RTSPStream extends BaseStream {
     this._onSample = this.onSample.bind(this);
     this._onClear = this.onClear.bind(this);
     this._onDisconnect = this.onDisconnect.bind(this);
+    this._onError = this.onError.bind(this);
   }
 
   /// Public methods
@@ -55,6 +56,7 @@ export default class RTSPStream extends BaseStream {
       this.client.on("sample", this._onSample);
       this.client.on("clear", this._onClear);
       this.client.on("disconnect", this._onDisconnect);
+      this.client.on("error", this._onError);
     } else {
       this.client.reset();
     }
@@ -84,7 +86,16 @@ export default class RTSPStream extends BaseStream {
   }
 
   destory() {
+    this.client.reset();
     this.client.destory();
+    /** Clear sampleQueues */
+    this.sampleQueues = {};
+    /** Clear tracks */
+    this.tracks = null;
+    /** Destory remux */
+    if (this.remux) {
+      this.remux.destroy();
+    }
   }
 
   /// events
@@ -142,8 +153,22 @@ export default class RTSPStream extends BaseStream {
       this.eventSource.dispatchEvent("tracks", tracks);
       this.startStreamFlush();
     } else {
-      this.eventSource.dispatchEvent("error", "Codec not supported using MSE!");
+      this.eventSource.dispatchEvent(
+        "error",
+        new ASMediaError(
+          ASMediaError.MEDIA_ERR_SRC_NOT_SUPPORTED,
+          "Codec not supported using MSE!"
+        )
+      );
+      this.destory();
     }
+  }
+
+  /// Error occure notify
+  onError(e) {
+    this.buffering = false;
+    this.eventSource.dispatchEvent("error", e);
+    this.destory();
   }
 
   /// MSE  accessunit event notify
@@ -159,7 +184,9 @@ export default class RTSPStream extends BaseStream {
 
     if (!this.firstRAP) {
       /// Drop accessunit ...
-      Log.error("Receive accessunit, but not found track!");
+      Log.warn(
+        "Receive accessunit, but not found track, discard this access unit!"
+      );
       return;
     }
     let track = null;
@@ -184,7 +211,7 @@ export default class RTSPStream extends BaseStream {
     }
 
     if (!track) {
-      Log.error("Receive accessunit, but not found track!");
+      Log.warn("Receive accessunit, but not found track!");
       return;
     }
 
@@ -222,13 +249,19 @@ export default class RTSPStream extends BaseStream {
       }
     } else if (track.type === PayloadType.AAC && !track.params.config) {
       if (!accessunit.config) {
-        throw new Error(
-          "Receive aac accessunit, but have not config information!"
+        this.eventSource.dispatchEvent(
+          "error",
+          new ASMediaError(
+            ASMediaError.MEDIA_ERROR_AV,
+            "Receive AAC accessunit, but have not config information!"
+          )
         );
+        this.destory();
+      } else {
+        track.params.config = accessunit.config;
+        track.codec = accessunit.config.codec;
+        track.ready = true;
       }
-      track.params.config = accessunit.config;
-      track.codec = accessunit.config.codec;
-      track.ready = true;
     }
 
     /// Check TS/PS container tracks ready
@@ -270,15 +303,13 @@ export default class RTSPStream extends BaseStream {
 
   onDisconnect() {
     this.buffering = false;
-    Log.log("onDisconnect!");
-  }
-
-  discardFrame(callback) {
-    Log.log("Discard video frame!");
-  }
-
-  discardAudio(callback) {
-    Log.log("Discard audio frame!");
+    this.eventSource.dispatchEvent(
+      "error",
+      new ASMediaError(
+        ASMediaError.MEDIA_ERROR_NETWORK,
+        "websocket disconected!"
+      )
+    );
   }
 
   _getCacheLength() {

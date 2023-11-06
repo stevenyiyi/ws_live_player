@@ -71,6 +71,11 @@ export class ASPlayer {
     this.stream.stop();
   }
 
+  /** destory */
+  destroy() {
+    this.stream.destory();
+  }
+
   _is_in_buffered(current_time) {
     let buffereds = this._video.buffered;
     let f = false;

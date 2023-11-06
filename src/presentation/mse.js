@@ -217,7 +217,7 @@ export class MSEBuffer {
 
         if (removeBound <= removeEnd && removeBound >= removeStart) {
           Log.debug(
-            `Clear [${removeStart}, ${removeBound}), leave [${removeBound}, ${removeEnd}]`
+            `Clear [${removeStart}, ${removeBound}], leave [${removeBound}, ${removeEnd}]`
           );
           removeEnd = removeBound;
           if (removeEnd != removeStart) {
