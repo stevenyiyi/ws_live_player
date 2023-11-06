@@ -167,9 +167,10 @@ export default class RTSPStream extends BaseStream {
 
   /// Error occure notify
   onError(e) {
+    Log.error(e);
     this.buffering = false;
     this.eventSource.dispatchEvent("error", e);
-    this.destory();
+    this.destroy();
   }
 
   /// MSE  accessunit event notify

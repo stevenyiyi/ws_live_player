@@ -4,42 +4,10 @@ import { PESAsm } from "./pes.js";
 import { H26XPES } from "./pes_h26x.js";
 import { AACPES } from "./pes_aac.js";
 import { G7XXPES } from "./pes_g7xx.js";
-import { PayloadType } from "../StreamDefine.js";
+import { PayloadType, PESType } from "../StreamDefine.js";
 import { ASMediaError } from "../utils/ASMediaError.js";
 const LOG_TAG = "parses:ts";
 const Log = getTagged(LOG_TAG);
-export class PESType {
-  static get AAC() {
-    return 0x0f;
-  } // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
-  static get ID3() {
-    return 0x15;
-  } // Packetized metadata (ID3)
-  static get PCMA() {
-    return 0x90;
-  } // GBT 28181
-  static get PCMU() {
-    return 0x91;
-  } // GBT 28181
-  static get G722() {
-    return 0x92;
-  } // GBT 28181
-  static get G723() {
-    return 0x93;
-  } // GBT 28181
-  static get G726() {
-    return 0x94;
-  } // GBT 28181
-  static get G729() {
-    return 0x99;
-  } // GBT 28181
-  static get H264() {
-    return 0x1b;
-  } // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
-  static get H265() {
-    return 0x24;
-  } // ITU-T H.265 | ISO/IEC 23008-2 video stream or an HEVC temporal video sub-bitstream
-}
 
 export class TSParser {
   static get PACKET_LENGTH() {
@@ -111,6 +79,7 @@ export class TSParser {
         if (pid === 0) {
           /// Parse PAT
           this.pmtId = this.parsePAT(payload);
+          Log.debug(`pmtId:${this.pmtId}`);
         } else if (pid === this.pmtId) {
           /// Parse PMT
           this.parsePMT(payload);
@@ -174,7 +143,7 @@ export class TSParser {
         if (this.pesParserTypes.has(pesType) && !this.pesParsers.has(pid)) {
           this.pesParsers.set(
             pid,
-            new this.pesParserTypes.get(pesType)(pesType)
+            new (this.pesParserTypes.get(pesType))(pesType)
           );
           this.pesAsms[pid] = new PESAsm(pid);
           switch (pesType) {

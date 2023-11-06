@@ -18,6 +18,39 @@ export class StreamType {
   }
 }
 
+export class PESType {
+  static get AAC() {
+    return 0x0f;
+  } // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
+  static get ID3() {
+    return 0x15;
+  } // Packetized metadata (ID3)
+  static get PCMA() {
+    return 0x90;
+  } // GBT 28181
+  static get PCMU() {
+    return 0x91;
+  } // GBT 28181
+  static get G722() {
+    return 0x92;
+  } // GBT 28181
+  static get G723() {
+    return 0x93;
+  } // GBT 28181
+  static get G726() {
+    return 0x94;
+  } // GBT 28181
+  static get G729() {
+    return 0x99;
+  } // GBT 28181
+  static get H264() {
+    return 0x1b;
+  } // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
+  static get H265() {
+    return 0x24;
+  } // ITU-T H.265 | ISO/IEC 23008-2 video stream or an HEVC temporal video sub-bitstream
+}
+
 export class PayloadType {
   static get H264() {
     return 1;

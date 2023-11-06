@@ -1,12 +1,14 @@
 import { NALUAsm } from "./nalu-asm.js";
 import { NALUAsmHevc } from "./nalu-asm-hevc.js";
 import { appendByteArray } from "../utils/binary.js";
-import { PayloadType } from "../StreamDefine.js";
+import { PayloadType, PESType } from "../StreamDefine.js";
 import { MediaAccessunit } from "../MediaAccessunit.js";
+
 export class H26XPES {
   constructor(pesType) {
+    console.log(`Construct H26XPES, pesType:${pesType}`);
     this.pesType = pesType;
-    if (pesType === PayloadType.H264) {
+    if (pesType === PESType.H264) {
       this.naluasm = new NALUAsm();
     } else {
       this.naluasm = new NALUAsmHevc();

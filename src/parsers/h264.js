@@ -1,6 +1,6 @@
 import { ExpGolomb } from "./exp-golomb.js";
 import { NALU } from "./nalu.js";
-
+import { ASMediaError } from "../utils/ASMediaError.js";
 export class H264Parser {
   constructor(track) {
     this.track = track;
@@ -86,13 +86,13 @@ export class H264Parser {
 
         let uuid = unit.data.subarray(byte_idx, byte_idx + 16);
         byte_idx += 16;
-        console.log(
+        /** console.log(
           `PT: ${pay_type}, PS: ${pay_size}, UUID: ${Array.from(uuid)
             .map(function (i) {
               return ("0" + i.toString(16)).slice(-2);
             })
             .join("")}`
-        );
+        ); */
         // debugger;
         break;
       case NALU.EOSEQ:
@@ -161,6 +161,8 @@ export class H264Parser {
       sarScale = 1,
       profileIdc,
       numRefFramesInPicOrderCntCycle,
+      fixedFramerate = true,
+      frameDuration = 0,
       picWidthInMbsMinus1,
       picHeightInMapUnitsMinus1,
       frameMbsOnlyFlag,
@@ -298,7 +300,8 @@ export class H264Parser {
             break;
           }
           default:
-            throw new Error(
+            throw new ASMediaError(
+              ASMediaError.MEDIA_ERROR_DECODE,
               `Invalid avc sps aspectRatioIdc: ${aspectRatioIdc}`
             );
         }
@@ -323,8 +326,8 @@ export class H264Parser {
       if (decoder.readBoolean()) {
         let unitsInTick = decoder.readUInt();
         let timeScale = decoder.readUInt();
-        let fixedFrameRate = decoder.readBoolean();
-        let frameDuration = timeScale / (2 * unitsInTick);
+        fixedFrameRate = decoder.readBoolean();
+        frameDuration = timeScale / (2 * unitsInTick);
         console.log(
           `timescale: ${timeScale}; unitsInTick: ${unitsInTick}; fixedFramerate: ${fixedFrameRate}; avgFrameDuration: ${frameDuration}`
         );
@@ -341,7 +344,9 @@ export class H264Parser {
         (2 - frameMbsOnlyFlag) * (picHeightInMapUnitsMinus1 + 1) * 16 -
         (frameMbsOnlyFlag ? 2 : 4) *
           (frameCropTopOffset + frameCropBottomOffset),
-      hasBFrames: picOrderCntType === 2 ? false : true
+      hasBFrames: picOrderCntType === 2 ? false : true,
+      fixedFrameRate: fixedFramerate,
+      frameDuration: frameDuration
     };
   }
 

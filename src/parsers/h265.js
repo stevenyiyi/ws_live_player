@@ -197,13 +197,13 @@ export class H265Parser {
 
         let uuid = unit.data.subarray(byte_idx, byte_idx + 16);
         byte_idx += 16;
-        console.log(
+        /** console.log(
           `PT: ${pay_type}, PS: ${pay_size}, UUID: ${Array.from(uuid)
             .map(function (i) {
               return ("0" + i.toString(16)).slice(-2);
             })
             .join("")}`
-        );
+        ); */
         // debugger;
         break;
       case HEVC_NALU.EOS:
@@ -233,7 +233,6 @@ export class H265Parser {
     reader.skipBits(1);
     // Skip vps_max_layers_minus_1
     reader.skipBits(6);
-
     // Skip vps_max_sub_layers_minus1
     reader.skipBits(3); // + 1;
     // Skip vps_temporal_id_nesting_flags
@@ -251,6 +250,39 @@ export class H265Parser {
       (reader.readBits(16) << 32) | reader.readBits(32)
     );
     config["GeneralLevelIdc"] = reader.readBits(8);
+    /** vps_sub_layer_ordering_info_present_flag */
+    let vps_sub_layer_ordering_info_present_flag = reader.readBits(1);
+    let i = vps_sub_layer_ordering_info_present_flag
+      ? 0
+      : vps_max_sub_layers_minus1 - 1;
+    for (; i < vps_max_sub_layers_minus1; i++) {
+      //Skip vps_max_dec_pic_buffering_minus1[i]
+      reader.skipUEG();
+      //Skip vps_max_num_reorder_pics[i]
+      reader.skipUEG();
+      //Skip vps_max_latency_increase_plus1
+      reader.skipUEG();
+    }
+    /// vps_max_layer_id
+    let vps_max_layer_id = reader.readBits(6);
+    let vps_num_layer_sets_minus1 = reader.readUEG() + 1;
+    for (let i = 1; i < vps_num_layer_sets_minus1; i++) {
+      for (let j = 0; j <= vps_max_layer_id; j++) {
+        reader.skipBits(1); // layer_id_
+      }
+    }
+
+    let vps_timing_info_present_flag = reader.readBits(1);
+    if (vps_timing_info_present_flag) {
+      //vps_num_units_in_tick
+      let num = reader.getBits(32);
+      //vps_time_scale
+      let den = reader.getBits(32);
+      config["fixedFrameRate"] = true;
+      config["frameDuration"] = num / den;
+    } else {
+      config["fixedFrameRate"] = false;
+    }
     return config;
   }
 
