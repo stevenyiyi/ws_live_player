@@ -5,6 +5,7 @@ import { H26XPES } from "./pes_h26x.js";
 import { AACPES } from "./pes_aac.js";
 import { G7XXPES } from "./pes_g7xx.js";
 import { PayloadType } from "../StreamDefine.js";
+import { ASMediaError } from "../utils/ASMediaError.js";
 const LOG_TAG = "parses:ts";
 const Log = getTagged(LOG_TAG);
 export class PESType {
@@ -116,10 +117,18 @@ export class TSParser {
           this.pmtParsed = true;
         } else {
           Log.error(`Invalid pid:${pid}`);
+          throw new ASMediaError(
+            ASMediaError.MEDIA_ERROR_AV,
+            `Invalid pid:${pid}`
+          );
         }
       }
     } else {
       Log.error("Invalid ts packet, first byte must be 0x47!");
+      throw new ASMediaError(
+        ASMediaError.MEDIA_ERROR_AV,
+        "Invalid ts packet, first byte must be 0x47!"
+      );
     }
     return null;
   }
@@ -221,7 +230,10 @@ export class TSParser {
               });
               break;
             default:
-              throw new Error(`Invalid pes type:${pesType} not supported!`);
+              throw new ASMediaError(
+                ASMediaError.MEDIA_ERROR_AV,
+                `Invalid pes type:${pesType} not supported!`
+              );
           }
         }
       }
@@ -229,7 +241,10 @@ export class TSParser {
     }
 
     if (tracks.size === 0) {
-      throw new Error("Parse PMT, not found track!");
+      throw new ASMediaError(
+        ASMediaError.MEDIA_ERROR_AV,
+        "Parse PMT, not found track!"
+      );
     }
 
     /// Has codec special data?

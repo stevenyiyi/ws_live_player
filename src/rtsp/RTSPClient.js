@@ -447,9 +447,9 @@ export class RTSPClientSM extends StateMachine {
       }
       if (parsed.code >= 300) {
         Log.error(parsed.statusLine);
-        throw new RTSPError({
-          msg: `RTSP error: ${parsed.code} ${parsed.statusLine}`,
-          parsed: parsed
+        throw new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+          code: parsed.code,
+          statusLine: parsed.statusLine
         });
       }
       return parsed;
@@ -478,7 +478,10 @@ export class RTSPClientSM extends StateMachine {
       return this.sdp
         .parse(data.body)
         .catch(() => {
-          throw new Error("Failed to parse SDP");
+          throw new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+            code: 515,
+            statusLine: "Failed to parse SDP"
+          });
         })
         .then(() => {
           return data;
@@ -510,7 +513,10 @@ export class RTSPClientSM extends StateMachine {
     }
 
     if (!this.tracks.length) {
-      throw new Error("No tracks in SDP");
+      throw new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+        code: 514,
+        statusLine: "No tracks in SDP"
+      });
     }
 
     this.transitionTo(RTSPClientSM.STATE_SETUP);
@@ -614,7 +620,7 @@ export class RTSPClientSM extends StateMachine {
         });
       })
       .catch((e) => {
-        console.error(e);
+        this.parent.emit("error", e);
         this.stop();
         this.reset();
       });
@@ -652,7 +658,11 @@ export class RTSPClientSM extends StateMachine {
         rtp.timestamp - this.timeOffset[rtp.pt] - this.lastTimestamp[rtp.pt];
 
       if (rtp.media) {
-        this.payParser.parse(rtp);
+        try {
+          this.payParser.parse(rtp);
+        } catch (error) {
+          this.parent.emit("error", error);
+        }
       }
     }
   }

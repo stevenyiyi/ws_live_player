@@ -5,6 +5,7 @@ import { AACAsm } from "../parsers/aac-asm.js";
 import { TSParser } from "../parsers/ts.js";
 import { PayloadType } from "../StreamDefine.js";
 import { TinyEvents } from "../utils/event.js";
+import { ASMediaError } from "../utils/ASMediaError.js";
 import { Log } from "../utils/logger.js";
 
 export class RTPPayloadParser extends TinyEvents {
@@ -44,7 +45,10 @@ export class RTPPayloadParser extends TinyEvents {
       let offset = 0;
       if (data.byteLength % TSParser.PACKET_LENGTH) {
         Log.error(`Invalid rtp ts payload length:${data.ByteLength}`);
-        throw new Error(`Invalid rtp ts payload length:${data.ByteLength}`);
+        throw new ASMediaError(
+          ASMediaError.MEDIA_ERROR_AV,
+          `Invalid rtp ts payload length:${data.ByteLength}`
+        );
       }
 
       while (offset < data.byteLength) {
@@ -77,7 +81,8 @@ export class RTPPayloadParser extends TinyEvents {
         this.emit("sample", parsed);
       }
     } else {
-      throw Error(
+      throw ASMediaError(
+        ASMediaError.MEDIA_ERROR_AV,
         `Not support codec:${PayloadType.stringCodec(rtp.media.ptype)}`
       );
     }
