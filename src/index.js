@@ -9,7 +9,7 @@ document.getElementById("app").innerHTML = `
 `;
 let video = document.getElementById("test_video");
 let player = new ASPlayer({
-  wsurl: "ws://localhost/ws_live?username=chengyi",
+  wsurl: "ws://localhost/ws_live",
   rtspurl:
     "rtsp://50011200121328555763:991100@localhost:5554/live/50011200121328555763",
   cacheSize: 1000,

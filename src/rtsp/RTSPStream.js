@@ -385,7 +385,7 @@ export default class RTSPStream extends BaseStream {
     if (MSE.isSupported(codecs)) {
       this.useMSE = true;
       this.remux = new Remuxer(this.video);
-      this.remux.MSE.bufferedDuration = this.bufferedDuration;
+      this.remux.MSE.bufferDuration = this.bufferedDuration;
       this.remux.attachClient(this);
     } else {
       Log.error(

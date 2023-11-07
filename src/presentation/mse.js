@@ -62,17 +62,18 @@ export class MSEBuffer {
           this.doCleanup();
           return;
         }
-      } else {
-        //hack to get safari on mac to start playing, video.currentTime gets stuck on 0
-        if (
-          !this.sourceBuffer.updating &&
-          this.mediaSource.duration !== Number.POSITIVE_INFINITY &&
-          this.players[0].currentTime === 0 &&
-          this.mediaSource.duration > 0
-        ) {
-          this.players[0].currentTime = this.mediaSource.duration - 1;
-          this.mediaSource.duration = Number.POSITIVE_INFINITY;
-        }
+      }
+
+      if (this.sourceBuffer.updating) return;
+
+      //hack to get safari on mac to start playing, video.currentTime gets stuck on 0
+      if (
+        this.mediaSource.duration !== Number.POSITIVE_INFINITY &&
+        this.players[0].currentTime === 0 &&
+        this.mediaSource.duration > 0
+      ) {
+        this.players[0].currentTime = this.mediaSource.duration - 1;
+        this.mediaSource.duration = Number.POSITIVE_INFINITY;
       }
 
       // cleanup buffer after 100 updates
@@ -230,36 +231,6 @@ export class MSEBuffer {
       }
 
       this.doCleanup();
-
-      // let bufferStart = this.sourceBuffer.buffered.start(0);
-      // let removeEnd = this.sourceBuffer.buffered.start(0) + (this.sourceBuffer.buffered.end(0) - this.sourceBuffer.buffered.start(0))/2;
-      // if (this.players[0].currentTime < removeEnd) {
-      //     this.players[0].currentTime = removeEnd;
-      // }
-      // let removeEnd = Math.max(this.players[0].currentTime - 3, this.sourceBuffer.buffered.end(0) - 3);
-      //
-      // if (removeEnd < bufferStart) {
-      //     removeEnd = this.sourceBuffer.buffered.start(0) + (this.sourceBuffer.buffered.end(0) - this.sourceBuffer.buffered.start(0))/2;
-      //     if (this.players[0].currentTime < removeEnd) {
-      //         this.players[0].currentTime = removeEnd;
-      //     }
-      // }
-
-      // if (removeEnd > bufferStart && (removeEnd - bufferStart > 0.5 )) {
-      //     // try {
-      //         Log.debug(`${this.codec} remove range [${bufferStart} - ${removeEnd}).
-      //         \nBuffered end: ${this.sourceBuffer.buffered.end(0)}
-      //         \nUpdating: ${this.sourceBuffer.updating}
-      //         `);
-      //         this.cleaning = true;
-      //         this.sourceBuffer.remove(bufferStart, removeEnd);
-      //     // } catch (e) {
-      //     //     // TODO: implement
-      //     //     Log.error(e);
-      //     // }
-      // } else {
-      //     this.feedNext();
-      // }
     } else {
       this.feedNext();
     }

@@ -8,6 +8,7 @@ export class ASPlayer {
     this.dataHandler = null;
     this.queryCredentials = null;
     this.bufferDuration_ = 120;
+    this.supposedCurrentTime = 0;
     this.stream = new RTSPStream(options);
     this._attachVideo(options.video);
   }
@@ -36,12 +37,33 @@ export class ASPlayer {
     this._video.addEventListener(
       "seeking",
       () => {
-        if (!this._is_in_buffered(this._video.currentTime)) {
-          this.stream.seek(this._video.currentTime);
+        if (this.stream.seekable) {
+          if (!this._is_in_buffered(this._video.currentTime)) {
+            console.log(`seek to ${this._video.currentTime}`);
+            this.stream.seek(this._video.currentTime);
+          }
+        } else {
+          let delta = this._video.currentTime - this.supposedCurrentTime;
+          if (Math.abs(delta) >= 0.01) {
+            console.log("Seeking is disabled");
+            this._video.currentTime = this.supposedCurrentTime;
+          }
         }
       },
       false
     );
+
+    /** video updatetime handler */
+    this._video.addEventListener(
+      "timeupdate",
+      () => {
+        if (!this._video.seeking) {
+          this.supposedCurrentTime = this._video.currentTime;
+        }
+      },
+      false
+    );
+
     /** video abort handler */
     this._video.addEventListener(
       "abort",
@@ -49,6 +71,15 @@ export class ASPlayer {
         this.stream.abort().then(() => {
           this.stream.destroy();
         });
+      },
+      false
+    );
+
+    /** video ended handler */
+    this._video.addEventListener(
+      "ended",
+      () => {
+        this.supposedCurrentTime = 0;
       },
       false
     );
