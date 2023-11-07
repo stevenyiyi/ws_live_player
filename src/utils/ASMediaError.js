@@ -14,11 +14,23 @@ const ASMediaErrorConstants = {
  * HTMLMediaElement.error property
  */
 export class ASMediaError {
+  static get MEDIA_ERR_ABORTED() {
+    return 1;
+  }
+  static get MEDIA_ERR_NETWORK() {
+    return 2;
+  }
+  static get MEDIA_ERR_RTSP() {
+    return 3;
+  }
+  static get MEDIA_ERR_AV() {
+    return 4;
+  }
+  static get MEDIA_ERR_DECODE() {
+    return 5;
+  }
   constructor(code, message) {
     this.code = code;
     this.message = message;
   }
 }
-
-extend(ASMediaError, ASMediaErrorConstants);
-extend(ASMediaError.prototype, ASMediaErrorConstants);

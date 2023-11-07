@@ -37,6 +37,7 @@ export class BaseClient extends TinyEvents {
     this._onData = this.onData.bind(this);
     this._onControl = this.onControl.bind(this);
     this._onJabber = this.onJabber.bind(this);
+    this._onError = this.onError.bind(this);
   }
 
   static streamType() {
@@ -60,6 +61,7 @@ export class BaseClient extends TinyEvents {
     this.transport.on("data", this._onData);
     this.transport.on("connected", this._onConnected);
     this.transport.on("disconnected", this._onDisconnect);
+    this.transport.on("error", this._onError);
   }
 
   detachTransport() {
@@ -105,6 +107,10 @@ export class BaseClient extends TinyEvents {
 
   onDisconnected() {
     this.connected = false;
+  }
+
+  onError(e) {
+    this.emit("error", e);
   }
 
   queryCredentials() {

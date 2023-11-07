@@ -22,16 +22,6 @@ export default class BaseStream {
           return this._getHasVideo();
         }
       },
-      hasBFrames: {
-        get: function getHasBFrames() {
-          return this._getHasBFrames();
-        }
-      },
-      length: {
-        get: function getLength() {
-          return this._getMediaLength();
-        }
-      },
       buffering: { value: false, writable: true },
       seeking: { value: false, writable: true },
       waiting: { value: false, writable: true },
@@ -97,20 +87,11 @@ export default class BaseStream {
     clearInterval(this.flushTimerId);
   }
 
-  /// Private methods
-  _getMediaLength() {
-    throw Error("Call _getMediaLength() in abstract class!");
-  }
-
   _getHasAudio() {
     throw Error("Call _getHasAudio() in abstract class!");
   }
 
   _getHasVideo() {
-    throw Error("Call _getHasVideo() in abstract class!");
-  }
-
-  _getHasBFrames() {
     throw Error("Call _getHasVideo() in abstract class!");
   }
 

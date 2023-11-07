@@ -314,47 +314,6 @@ export default class RTSPStream extends BaseStream {
     );
   }
 
-  _getCacheLength() {
-    let cachesize = 0;
-    if (this.frameBuffers.length > 0) {
-      for (const frame of this.frameBuffers) {
-        cachesize += frame.timestamp;
-      }
-    }
-    return cachesize;
-  }
-
-  _getMediaLength() {
-    if (!this.tracks) {
-      throw Error("_getMediaLength but tracks not ready!");
-    }
-
-    let track = null;
-    if (
-      this.tracks[0].ptype === PayloadType.TS ||
-      this.tracks[0].ptype === PayloadType.PS
-    ) {
-      track = this.tracks[0].tracks[0];
-    } else {
-      track = this.tracks[0];
-    }
-
-    if (!track.sampleQueue) {
-      return 0;
-    }
-
-    const queue = track.sampleQueue;
-    let dts = 0;
-    for (const sample of queue) {
-      dts += sample.dts;
-    }
-
-    const ptype = track.ptype;
-    let timescale = this._getTimeScale(ptype);
-    dts = (dts * 1000) / timescale;
-    return dts;
-  }
-
   _getTimeScale(ptype) {
     let timescale = 0;
     for (let i = 0; i < this.tracks.length; i++) {

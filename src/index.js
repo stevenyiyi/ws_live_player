@@ -16,4 +16,7 @@ let player = new ASPlayer({
   video: video,
   bufferedDuration: 15
 });
+player.errorHandler = (e) => {
+  console.log(e);
+};
 player.start();

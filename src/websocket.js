@@ -1,5 +1,6 @@
 import { getTagged } from "./utils/logger.js";
 import { TinyEvents } from "./utils/event.js";
+import { ASMediaError } from "./utils/ASMediaError.js";
 const LOG_TAG = "transport:ws";
 const Log = getTagged(LOG_TAG);
 
@@ -40,7 +41,10 @@ export class WebsocketTransport extends TinyEvents {
 
   onError(e) {
     Log.log("WS onerror:", e);
-    this.emit("error", e);
+    this.emit(
+      "error",
+      new ASMediaError(ASMediaError.MEDIA_ERR_NETWORK, "network disconnected!")
+    );
   }
 
   onClose(e) {

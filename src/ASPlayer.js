@@ -11,6 +11,7 @@ export class ASPlayer {
     this.supposedCurrentTime = 0;
     this.stream = new RTSPStream(options);
     this._attachVideo(options.video);
+    this.stream.eventSource.addEventListener("error", this._onError.bind(this));
   }
 
   /** video play handler */
@@ -105,6 +106,12 @@ export class ASPlayer {
   /** destory */
   destroy() {
     this.stream.destory();
+  }
+
+  _onError(e) {
+    if (this.errorHandler) {
+      this.errorHandler(e);
+    }
   }
 
   _is_in_buffered(current_time) {
