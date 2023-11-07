@@ -282,6 +282,7 @@ export class H265Parser {
       config["frameDuration"] = num / den;
     } else {
       config["fixedFrameRate"] = false;
+      config["frameDuration"] = 0;
     }
     return config;
   }

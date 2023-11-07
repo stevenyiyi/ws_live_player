@@ -406,19 +406,81 @@ export default class RTSPStream extends BaseStream {
       return null;
     }
     for (const track of tracks) {
-      if (track.type === "audio") {
-        return {
-          codec: track.params.config.codec,
-          samplerate: track.params.config.samplerate,
-          channel: track.params.config.channel
-        };
+      if (!this.isContainer) {
+        if (track.type === "audio" && track.ptype === PayloadType.AAC) {
+          return {
+            codec: track.params.config.codec,
+            samplerate: track.params.config.samplerate,
+            channel: track.params.config.channel
+          };
+        }
+      } else {
+        if (track.type === PayloadType.AAC) {
+          return {
+            codec: track.params.config.codec,
+            samplerate: track.params.config.samplerate,
+            channel: track.params.config.channel
+          };
+        }
       }
+    }
+    return null;
+  }
+
+  _getVideoExt(track) {
+    if (track.type === PayloadType.H264) {
+      if (!track.params.sps || !track.params.pps) return null;
+      return H264Parser.readSPS(track.params.sps);
+    } else if (track.type === PayloadType.H265) {
+      let vpsconfig = H265Parser.readVPS(track.params.vps);
+      let info = H265Parser.readSPS(track.params.sps);
+      info["fixedFrameRate"] = vpsconfig.fixedFrameRate;
+      info["frameDuration"] = vpsconfig.frameDuration;
+      return info;
     }
     return null;
   }
 
   _getVideoInfo() {
     /// get video info
+    let tracks = null;
+    if (this.isContainer) {
+      tracks = this.tracks[0].tracks;
+    } else {
+      tracks = this.tracks;
+    }
+    if (!tracks) {
+      return null;
+    }
+    for (const track of tracks) {
+      if (!this.isContainer) {
+        if (
+          track.type === "video" &&
+          (track.ptype === PayloadType.H264 ||
+            track.ptype === PayloadType.H265 ||
+            track.ptype === PayloadType.AV1)
+        ) {
+          if (!track.params.info) {
+            track.params.info = this._getVideoExt(track);
+            track.params.info.codec = track.codec;
+          }
+          return track.params.info;
+        }
+      } else {
+        if (
+          track.type === PayloadType.H264 ||
+          track.type === PayloadType.H265 ||
+          track.type === PayloadType.AV1
+        ) {
+          if (!track.params.info) {
+            track.params.info = this._getVideoExt(track);
+            track.params.info.codec = track.codec;
+          }
+          return track.params.info;
+        }
+      }
+    }
+    return null;
   }
 
   _getHasAudio() {
@@ -431,9 +493,16 @@ export default class RTSPStream extends BaseStream {
     }
 
     for (const track of tracks) {
-      if (track.type === "audio") {
-        f = true;
-        break;
+      if (!this.isContainer) {
+        if (track.type === "audio") {
+          f = true;
+          break;
+        }
+      } else {
+        if (track.type === PayloadType.AAC) {
+          f = true;
+          break;
+        }
       }
     }
     return f;
@@ -449,9 +518,20 @@ export default class RTSPStream extends BaseStream {
     }
 
     for (const track of tracks) {
-      if (track.type === "video") {
-        f = true;
-        break;
+      if (!this.isContainer) {
+        if (track.type === "video") {
+          f = true;
+          break;
+        }
+      } else {
+        if (
+          track.type === PayloadType.H264 ||
+          track.type === PayloadType.H265 ||
+          track.type === PayloadType.AV1
+        ) {
+          f = true;
+          break;
+        }
       }
     }
     return f;
