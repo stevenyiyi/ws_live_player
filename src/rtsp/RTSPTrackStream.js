@@ -35,9 +35,7 @@ export class RTSPTrackStream {
     }
   }
 
-  stop() {
-    return this.sendTeardown();
-  }
+  stop() {}
 
   getSetupURL(track) {
     let sessionBlock = this.client.sdp.getSessionBlock();

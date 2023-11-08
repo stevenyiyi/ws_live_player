@@ -47,9 +47,9 @@ export class RTSPClient extends BaseClient {
     this.clientSM.reset();
   }
 
-  destroy() {
+  async destroy() {
     this.clientSM.destroy();
-    return super.destroy();
+    await super.destroy();
   }
 
   start() {
@@ -278,7 +278,7 @@ export class RTSPClientSM extends StateMachine {
       Log.error(`Not found RTSP channel:${channel}!`);
       this.parent.emit(
         "error",
-        new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+        new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
           code: 512,
           statusLine: `Not found RTSP channel:${channel}!`
         })
@@ -290,7 +290,7 @@ export class RTSPClientSM extends StateMachine {
     this.shouldReconnect = false;
     let promises = [];
     for (let session in this.sessions) {
-      promises.push(this.sessions[session].sendPause());
+      promises.push(this.sessions[session].stop());
     }
     return Promise.all(promises);
   }
@@ -312,6 +312,7 @@ export class RTSPClientSM extends StateMachine {
     if (this.currentState) {
       if (this.currentState.name !== RTSPClientSM.STATE_INITIAL) {
         await this.transitionTo(RTSPClientSM.STATE_TEARDOWN);
+        Log.debug(`Current state:${this.currentState.name}`);
         await this.transitionTo(RTSPClientSM.STATE_INITIAL);
       }
     } else {
@@ -377,19 +378,20 @@ export class RTSPClientSM extends StateMachine {
   _transportRequest(_data) {
     return new Promise((resovle, reject) => {
       this.promises[this.cSeq] = { resovle, reject };
-      this.transport.send(_data, (result) => {
-        if (result === 0) {
+      this.transport
+        .send(_data)
+        .then(() => {
           Log.log(`send data success,cseq:${this.cSeq}`);
-        } else {
+        })
+        .catch((e) => {
           delete this.promises[this.cSeq];
           reject(
-            new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+            new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
               code: 462,
               statusLine: "462 Destination Unreachable"
             })
           );
-        }
-      });
+        });
     });
   }
 
@@ -446,8 +448,7 @@ export class RTSPClientSM extends StateMachine {
         throw new AuthError(parsed);
       }
       if (parsed.code >= 300) {
-        Log.error(parsed.statusLine);
-        throw new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+        throw new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
           code: parsed.code,
           statusLine: parsed.statusLine
         });
@@ -478,7 +479,7 @@ export class RTSPClientSM extends StateMachine {
       return this.sdp
         .parse(data.body)
         .catch(() => {
-          throw new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
+          throw new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
             code: 515,
             statusLine: "Failed to parse SDP"
           });
@@ -498,6 +499,7 @@ export class RTSPClientSM extends StateMachine {
   }
 
   onDescribe(data) {
+    Log.debug("onDescribe");
     this.contentBase = data.headers["content-base"] || this.url;
     this.tracks = this.sdp.getMediaBlockList();
     this.rtpFactory = new RTPFactory(this.sdp);
@@ -513,13 +515,19 @@ export class RTSPClientSM extends StateMachine {
     }
 
     if (!this.tracks.length) {
-      throw new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
-        code: 514,
-        statusLine: "No tracks in SDP"
+      this.emit(
+        "error",
+        new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
+          code: 514,
+          statusLine: "No tracks in SDP"
+        })
+      );
+    } else {
+      this.transitionTo(RTSPClientSM.STATE_SETUP).catch((e) => {
+        Log.error(e);
+        this.parent.emit("error", e);
       });
     }
-
-    this.transitionTo(RTSPClientSM.STATE_SETUP);
   }
 
   sendSetup() {
@@ -609,25 +617,19 @@ export class RTSPClientSM extends StateMachine {
         })
       );
     }
-    return Promise.all(streams)
-      .then((tracks) => {
-        let sessionPromises = [];
-        for (let session in this.sessions) {
-          sessionPromises.push(this.sessions[session].start());
-        }
-        return Promise.all(sessionPromises).then(() => {
-          this.parent.emit("tracks", tracks);
-        });
-      })
-      .catch((e) => {
-        Log.error("SETUP error:", e);
-        this.parent.emit("error", e);
-        this.stop();
-        this.reset();
+    return Promise.all(streams).then((tracks) => {
+      let sessionPromises = [];
+      for (let session in this.sessions) {
+        sessionPromises.push(this.sessions[session].start());
+      }
+      return Promise.all(sessionPromises).then(() => {
+        this.parent.emit("tracks", tracks);
       });
+    });
   }
 
   onSetup() {
+    Log.debug("onSetup");
     this.transitionTo(RTSPClientSM.STATE_STREAMS);
   }
 

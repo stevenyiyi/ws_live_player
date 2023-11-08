@@ -46,7 +46,7 @@ export class RTPPayloadParser extends TinyEvents {
       if (data.byteLength % TSParser.PACKET_LENGTH) {
         Log.error(`Invalid rtp ts payload length:${data.ByteLength}`);
         throw new ASMediaError(
-          ASMediaError.MEDIA_ERROR_AV,
+          ASMediaError.MEDIA_ERR_AV,
           `Invalid rtp ts payload length:${data.ByteLength}`
         );
       }

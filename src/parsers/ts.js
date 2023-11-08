@@ -87,7 +87,7 @@ export class TSParser {
         } else {
           Log.error(`Invalid pid:${pid}`);
           throw new ASMediaError(
-            ASMediaError.MEDIA_ERROR_AV,
+            ASMediaError.MEDIA_ERR_AV,
             `Invalid pid:${pid}`
           );
         }
@@ -95,7 +95,7 @@ export class TSParser {
     } else {
       Log.error("Invalid ts packet, first byte must be 0x47!");
       throw new ASMediaError(
-        ASMediaError.MEDIA_ERROR_AV,
+        ASMediaError.MEDIA_ERR_AV,
         "Invalid ts packet, first byte must be 0x47!"
       );
     }
@@ -203,7 +203,7 @@ export class TSParser {
               break;
             default:
               throw new ASMediaError(
-                ASMediaError.MEDIA_ERROR_AV,
+                ASMediaError.MEDIA_ERR_AV,
                 `Invalid pes type:${pesType} not supported!`
               );
           }
@@ -214,7 +214,7 @@ export class TSParser {
 
     if (tracks.size === 0) {
       throw new ASMediaError(
-        ASMediaError.MEDIA_ERROR_AV,
+        ASMediaError.MEDIA_ERR_AV,
         "Parse PMT, not found track!"
       );
     }

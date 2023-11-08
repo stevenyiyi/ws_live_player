@@ -254,7 +254,7 @@ export default class RTSPStream extends BaseStream {
         this.eventSource.dispatchEvent(
           "error",
           new ASMediaError(
-            ASMediaError.MEDIA_ERROR_AV,
+            ASMediaError.MEDIA_ERR_AV,
             "Receive AAC accessunit, but have not config information!"
           )
         );
@@ -307,10 +307,7 @@ export default class RTSPStream extends BaseStream {
     this.buffering = false;
     this.eventSource.dispatchEvent(
       "error",
-      new ASMediaError(
-        ASMediaError.MEDIA_ERROR_NETWORK,
-        "websocket disconected!"
-      )
+      new ASMediaError(ASMediaError.MEDIA_ERR_NETWORK, "websocket disconected!")
     );
   }
 

@@ -301,7 +301,7 @@ export class H264Parser {
           }
           default:
             throw new ASMediaError(
-              ASMediaError.MEDIA_ERROR_DECODE,
+              ASMediaError.MEDIA_ERR_DECODE,
               `Invalid avc sps aspectRatioIdc: ${aspectRatioIdc}`
             );
         }

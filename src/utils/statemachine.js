@@ -63,6 +63,7 @@ export class StateMachine {
   }
 
   transitionTo(stateName) {
+    /// console.log(`StateMachine change state:${stateName}`);
     if (this.currentState == null) {
       let state = this.states.get(stateName);
       return this._promisify(state.activate.call(this))
@@ -82,11 +83,13 @@ export class StateMachine {
       return this._promisify(this.currentState.deactivate.call(this))
         .then(state.activate.bind(this))
         .then((data) => {
+          /// console.log(`StateMachine set current state:${stateName}`);
           this.currentState = state;
           return data;
         })
         .then(state.finishTransition.bind(this))
         .catch((e) => {
+          //console.log(e);
           state.failHandler();
           throw e;
         });

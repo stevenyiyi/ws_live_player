@@ -121,7 +121,6 @@ export class WebsocketTransport extends TinyEvents {
   }
 
   disconnect() {
-    /// clearTimeout(this.timeoutID);
     return new Promise((resolve) => {
       if (this.ws) {
         this.ws.onclose = (e) => {
@@ -135,22 +134,34 @@ export class WebsocketTransport extends TinyEvents {
     });
   }
 
-  send(_data, fn) {
-    let ws = this.ws;
-    if (ws.readyState !== WebSocket.OPEN) {
-      Log.error("WS send in invalid state!");
-      fn(-1);
-    }
-
-    ws.send(_data);
-    const timerid = setInterval(() => {
+  send(_data) {
+    return new Promise((resolve, reject) => {
+      let ws = this.ws;
       if (ws.readyState !== WebSocket.OPEN) {
-        clearInterval(timerid);
-        fn(-1);
-      } else if (ws.bufferedAmount === 0) {
-        clearInterval(timerid);
-        fn(0);
+        Log.error("WS send in invalid state!");
+        reject(
+          new ASMediaError(
+            ASMediaError.MEDIA_ERR_NETWORK,
+            "WS send in invalid state!"
+          )
+        );
       }
-    }, 20);
+
+      ws.send(_data);
+      const timerid = setInterval(() => {
+        if (ws.readyState !== WebSocket.OPEN) {
+          clearInterval(timerid);
+          reject(
+            new ASMediaError(
+              ASMediaError.MEDIA_ERR_NETWORK,
+              "WS send in invalid state!"
+            )
+          );
+        } else if (ws.bufferedAmount === 0) {
+          clearInterval(timerid);
+          resolve();
+        }
+      }, 20);
+    });
   }
 }

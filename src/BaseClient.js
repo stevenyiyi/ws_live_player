@@ -44,10 +44,12 @@ export class BaseClient extends TinyEvents {
     return null;
   }
 
-  destroy() {
+  async destroy() {
     this.detachTransport();
+
     if (this.transport) {
-      return this.transport.disconnect();
+      await this.transport.disconnect();
+      this.transport = null;
     }
   }
 
@@ -71,7 +73,6 @@ export class BaseClient extends TinyEvents {
       this.transport.off("data", this._onData);
       this.transport.off("connected", this._onConnected);
       this.transport.off("disconnected", this._onDisconnect);
-      this.transport = null;
     }
   }
   reset() {}
