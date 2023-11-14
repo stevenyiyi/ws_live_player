@@ -233,8 +233,7 @@ export class H265Parser {
     reader.skipBits(1);
     // Skip vps_max_layers_minus_1
     reader.skipBits(6);
-    // Skip vps_max_sub_layers_minus1
-    reader.skipBits(3); // + 1;
+    let vps_max_sub_layers_minus1 = reader.readBits(3) + 1;
     // Skip vps_temporal_id_nesting_flags
     reader.skipBits(1);
 
@@ -275,9 +274,9 @@ export class H265Parser {
     let vps_timing_info_present_flag = reader.readBits(1);
     if (vps_timing_info_present_flag) {
       //vps_num_units_in_tick
-      let num = reader.getBits(32);
+      let num = reader.readBits(32);
       //vps_time_scale
-      let den = reader.getBits(32);
+      let den = reader.readBits(32);
       config["fixedFrameRate"] = true;
       config["frameDuration"] = num / den;
     } else {

@@ -1118,7 +1118,7 @@ export class MP4 {
       ),
       MP4.trun(
         track,
-        sampleDependencyTable.length +
+        sampleDependencyTable.length + //sdtp
         16 + // tfhd
         16 + // tfdt
         8 + // traf header

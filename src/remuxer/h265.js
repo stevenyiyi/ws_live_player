@@ -218,16 +218,19 @@ export class H265Remuxer extends BaseRemuxer {
           isLeading: 0,
           isDependedOn: 0,
           hasRedundancy: 0,
-          degradPrio: 0
+          degradPrio: 0,
+          isNonSync: 0
         }
       };
       let flags = mp4Sample.flags;
       if (sample.unit.isKeyframe() === true) {
         // the current sample is a key frame
         flags.dependsOn = 2;
+        flags.isDependedOn = 1;
         flags.isNonSync = 0;
       } else {
         flags.dependsOn = 1;
+        flags.isDependedOn = 1;
         flags.isNonSync = 1;
       }
 
