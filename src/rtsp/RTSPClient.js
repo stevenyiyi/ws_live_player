@@ -21,7 +21,7 @@ export class RTSPClient extends BaseClient {
   constructor(options) {
     super(options);
     this.clientSM = new RTSPClientSM(this);
-    this.clientSM.shouldReconnect = options.reconnect || false;
+    this.clientSM.shouldReconnect = options.reconnect;
   }
 
   static streamType() {
@@ -67,7 +67,6 @@ export class RTSPClient extends BaseClient {
           })
           .catch((e) => {
             this.connected = false;
-            throw e;
           });
       }
     } else {
@@ -105,6 +104,7 @@ export class RTSPClient extends BaseClient {
   onDisconnected() {
     super.onDisconnected();
     this.clientSM.onDisconnected();
+    this.emit("disconnect");
   }
 
   /// Private

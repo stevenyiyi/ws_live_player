@@ -58,6 +58,7 @@ export class BaseClient extends TinyEvents {
       this.detachTransport();
     }
     this.transport = transport;
+    transport.is_reconnect = this.options.reconnect;
     this.transport.on("control", this._onControl);
     this.transport.on("jabber", this._onJabber);
     this.transport.on("data", this._onData);
@@ -73,6 +74,7 @@ export class BaseClient extends TinyEvents {
       this.transport.off("data", this._onData);
       this.transport.off("connected", this._onConnected);
       this.transport.off("disconnected", this._onDisconnect);
+      this.transport.off("error", this._onError);
     }
   }
   reset() {}

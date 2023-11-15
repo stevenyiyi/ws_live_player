@@ -164,7 +164,7 @@ export default class RTSPStream extends BaseStream {
           "Codec not supported using MSE!"
         )
       );
-      this.destory();
+      this.destroy();
     }
   }
 
@@ -308,6 +308,14 @@ export default class RTSPStream extends BaseStream {
 
   onDisconnect() {
     this.buffering = false;
+    /** Clear sampleQueues */
+    this.sampleQueues = {};
+    /** Clear tracks */
+    this.tracks = null;
+    /** Destory remux */
+    if (this.remux) {
+      this.remux.destroy();
+    }
     this.eventSource.dispatchEvent(
       "error",
       new ASMediaError(ASMediaError.MEDIA_ERR_NETWORK, "websocket disconected!")

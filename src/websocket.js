@@ -45,17 +45,18 @@ export class WebsocketTransport extends TinyEvents {
   }
 
   onError(e) {
-    Log.log("WS onerror:", e);
+    Log.log(`WS onerror:${e}`);
+    /**
     let err = new ASMediaError(
       ASMediaError.MEDIA_ERR_NETWORK,
-      "network disconnected!"
+      "network error!"
     );
     if (this.connectPromise) {
       this.connectPromise.reject(err);
       this.connectPromise = null;
     } else {
       this.emit("error", err);
-    }
+    } */
   }
 
   onClose(e) {
@@ -69,15 +70,15 @@ export class WebsocketTransport extends TinyEvents {
       this.connectPromise = null;
     } else {
       this.emit("disconnected", err);
-      if (
-        e.code !== 1000 &&
-        e.code !== 4000 &&
-        e.code !== 4001 &&
-        e.code !== 4002 &&
-        e.code !== 4003
-      ) {
-        if (this.is_reconnect) this.reconnect();
-      }
+    }
+    if (
+      e.code !== 1000 &&
+      e.code !== 4000 &&
+      e.code !== 4001 &&
+      e.code !== 4002 &&
+      e.code !== 4003
+    ) {
+      if (this.is_reconnect) this.reconnect();
     }
   }
 
@@ -129,7 +130,7 @@ export class WebsocketTransport extends TinyEvents {
   }
 
   static streamTypes() {
-    return ["rtmp", "rtsp"];
+    return ["rtsp"];
   }
 
   connect() {

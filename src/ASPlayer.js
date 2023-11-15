@@ -94,7 +94,9 @@ export class ASPlayer {
   /** Load */
   start() {
     if (this.stream) {
-      this.stream.load();
+      return this.stream.load();
+    } else {
+      Promise.reject("Not attach stream!");
     }
   }
 
