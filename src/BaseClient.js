@@ -82,9 +82,13 @@ export class BaseClient extends TinyEvents {
     this.paused = false;
   }
 
-  stop() {
+  pause() {
     Log.log("Client paused");
-    this.paused = true;
+    this.paused = false;
+  }
+
+  stop() {
+    Log.log("Client stoped");
   }
 
   seek(timeOffset) {}

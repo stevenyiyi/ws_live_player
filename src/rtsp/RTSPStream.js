@@ -80,6 +80,10 @@ export default class RTSPStream extends BaseStream {
     });
   }
 
+  pause() {
+    return this.client.pause();
+  }
+
   stop() {
     return this.client.stop();
   }

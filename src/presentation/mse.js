@@ -114,7 +114,7 @@ export class MSEBuffer {
         currentPlayTime > removeEnd
       ) {
         try {
-          Log.debug("Remove media segments", startBuffered, removeEnd);
+          /// Log.debug("Remove media segments", startBuffered, removeEnd);
           this.sourceBuffer.remove(startBuffered, removeEnd);
         } catch (e) {
           Log.warn("Failed to cleanup buffer");

@@ -44,7 +44,7 @@ export class Remuxer {
 
     this.reset();
 
-    this.errorListener = this.mseClose.bind(this);
+    this.errorListener = this.mseError.bind(this);
     this.closeListener = this.mseClose.bind(this);
     this.errorDecodeListener = this.mseErrorDecode.bind(this);
 
@@ -179,10 +179,18 @@ export class Remuxer {
     }
   }
 
+  mseError(e) {
+    this.eventSource.dispatchEvent(
+      "error",
+      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, e)
+    );
+  }
+
   mseClose() {
-    // this.mse.clear();
-    this.client.stop();
-    this.eventSource.dispatchEvent("stopped");
+    this.eventSource.dispatchEvent(
+      "error",
+      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, "mse closed!")
+    );
   }
 
   mseErrorDecode() {

@@ -30,7 +30,7 @@ export class ASPlayer {
     this._video.addEventListener(
       "pause",
       () => {
-        this.stream.stop();
+        this.stream.pause();
       },
       false
     );

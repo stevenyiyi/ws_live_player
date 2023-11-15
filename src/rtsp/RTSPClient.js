@@ -84,6 +84,11 @@ export class RTSPClient extends BaseClient {
     return this.clientSM.stop();
   }
 
+  pause() {
+    super.pause();
+    return this.clientSM.pause();
+  }
+
   onControl(data) {
     this.clientSM.onControl(data);
   }
@@ -299,6 +304,14 @@ export class RTSPClientSM extends StateMachine {
     let promises = [];
     for (let session in this.sessions) {
       promises.push(this.sessions[session].stop());
+    }
+    return Promise.all(promises);
+  }
+
+  pause() {
+    let promises = [];
+    for (let session in this.sessions) {
+      promises.push(this.sessions[session].sendPause());
     }
     return Promise.all(promises);
   }
