@@ -21,6 +21,7 @@ export class RTSPClient extends BaseClient {
   constructor(options) {
     super(options);
     this.clientSM = new RTSPClientSM(this);
+    this.clientSM.shouldReconnect = options.reconnect || false;
   }
 
   static streamType() {

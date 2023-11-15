@@ -40,6 +40,17 @@ export default class RTSPStream extends BaseStream {
     this._onClear = this.onClear.bind(this);
     this._onDisconnect = this.onDisconnect.bind(this);
     this._onError = this.onError.bind(this);
+
+    /// Establish rtp client
+    this.client = new RTSPClient(options);
+    let transport = new WebsocketTransport(this.wsurl, "rtsp", "rtsp");
+    this.client.attachTransport(transport);
+    this.client.on("tracks", this._onTracks);
+    this.client.on("tstracks", this._onTsTracks);
+    this.client.on("sample", this._onSample);
+    this.client.on("clear", this._onClear);
+    this.client.on("disconnect", this._onDisconnect);
+    this.client.on("error", this._onError);
   }
 
   /// Public methods
@@ -47,19 +58,7 @@ export default class RTSPStream extends BaseStream {
   /// Override method, return Promise
   load() {
     Log.log("load starting!");
-    if (!this.client) {
-      this.client = new RTSPClient(this.options);
-      let transport = new WebsocketTransport(this.wsurl, "rtsp", "rtsp");
-      this.client.attachTransport(transport);
-      this.client.on("tracks", this._onTracks);
-      this.client.on("tstracks", this._onTsTracks);
-      this.client.on("sample", this._onSample);
-      this.client.on("clear", this._onClear);
-      this.client.on("disconnect", this._onDisconnect);
-      this.client.on("error", this._onError);
-    } else {
-      this.client.reset();
-    }
+    this.client.reset();
     this.client.setSource(this.rtspurl);
     this.buffering = true;
     this.client.start();

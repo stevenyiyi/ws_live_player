@@ -66,16 +66,7 @@ export class MSEBuffer {
 
       if (this.sourceBuffer.updating) return;
 
-      //hack to get safari on mac to start playing, video.currentTime gets stuck on 0
-      if (
-        this.mediaSource.duration !== Number.POSITIVE_INFINITY &&
-        this.players[0].currentTime === 0 &&
-        this.mediaSource.duration > 0
-      ) {
-        this.players[0].currentTime = this.mediaSource.duration - 1;
-        this.mediaSource.duration = Number.POSITIVE_INFINITY;
-      }
-
+      this.parent.setDurationInfinity();
       // cleanup buffer after 100 updates
       this.updatesToCleanup++;
       if (this.updatesToCleanup > 100) {
@@ -327,6 +318,21 @@ export class MSE {
     this.mediaSource = new MediaSource();
     this.eventSource = new EventEmitter(this.mediaSource);
     this.reset();
+  }
+
+  setDurationInfinity() {
+    for (let idx in this.buffers) {
+      if (this.buffers[idx].sourceBuffer.updating) return;
+    }
+    //hack to get safari on mac to start playing, video.currentTime gets stuck on 0
+    if (
+      this.mediaSource.duration !== Number.POSITIVE_INFINITY &&
+      this.players[0].currentTime === 0 &&
+      this.mediaSource.duration > 0
+    ) {
+      this.players[0].currentTime = this.mediaSource.duration - 1;
+      this.mediaSource.duration = Number.POSITIVE_INFINITY;
+    }
   }
 
   set bufferDuration(buffDuration) {
