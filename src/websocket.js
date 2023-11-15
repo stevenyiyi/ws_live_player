@@ -20,7 +20,7 @@ export class WebsocketTransport extends TinyEvents {
         }
       }
     });
-    /// this.ready = this.connect();
+    this.connectPromise = null;
   }
 
   _setupWebsocket(ws) {
@@ -36,28 +36,48 @@ export class WebsocketTransport extends TinyEvents {
 
   onOpen(e) {
     Log.log(`WS connect ${this.socket_url} success!`);
-    this.emit("connected");
+    if (this.connectPromise) {
+      this.connectPromise.resolve();
+      this.connectPromise = null;
+    } else {
+      this.emit("connected");
+    }
   }
 
   onError(e) {
     Log.log("WS onerror:", e);
-    this.emit(
-      "error",
-      new ASMediaError(ASMediaError.MEDIA_ERR_NETWORK, "network disconnected!")
+    let err = new ASMediaError(
+      ASMediaError.MEDIA_ERR_NETWORK,
+      "network disconnected!"
     );
+    if (this.connectPromise) {
+      this.connectPromise.reject(err);
+      this.connectPromise = null;
+    } else {
+      this.emit("error", err);
+    }
   }
 
   onClose(e) {
     Log.log(`WS onclose, code:${e.code}`);
-    this.emit("disconnected", e);
-    if (
-      e.code !== 1000 &&
-      e.code !== 4000 &&
-      e.code !== 4001 &&
-      e.code !== 4002 &&
-      e.code !== 4003
-    ) {
-      if (this.is_reconnect) this.reconnect();
+    let err = new ASMediaError(
+      ASMediaError.MEDIA_ERR_NETWORK,
+      "network disconnected!"
+    );
+    if (this.connectPromise) {
+      this.connectPromise.reject(err);
+      this.connectPromise = null;
+    } else {
+      this.emit("disconnected", err);
+      if (
+        e.code !== 1000 &&
+        e.code !== 4000 &&
+        e.code !== 4001 &&
+        e.code !== 4002 &&
+        e.code !== 4003
+      ) {
+        if (this.is_reconnect) this.reconnect();
+      }
     }
   }
 
@@ -113,10 +133,13 @@ export class WebsocketTransport extends TinyEvents {
   }
 
   connect() {
-    this.disconnect().then(() => {
-      let subprotos = this.protocols.split(",");
-      this.ws = new WebSocket(this.socket_url, subprotos);
-      this._setupWebsocket(this.ws);
+    return new Promise((resolve, reject) => {
+      this.connectPromise = { resolve, reject };
+      this.disconnect().then(() => {
+        let subprotos = this.protocols.split(",");
+        this.ws = new WebSocket(this.socket_url, subprotos);
+        this._setupWebsocket(this.ws);
+      });
     });
   }
 
