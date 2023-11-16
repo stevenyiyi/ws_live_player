@@ -312,10 +312,6 @@ export default class RTSPStream extends BaseStream {
     this.sampleQueues = {};
     /** Clear tracks */
     this.tracks = null;
-    /** Destory remux */
-    if (this.remux) {
-      this.remux.destroy();
-    }
     this.eventSource.dispatchEvent(
       "error",
       new ASMediaError(ASMediaError.MEDIA_ERR_NETWORK, "websocket disconected!")

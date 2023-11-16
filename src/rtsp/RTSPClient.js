@@ -97,8 +97,8 @@ export class RTSPClient extends BaseClient {
   }
 
   onConnected() {
-    this.clientSM.onConnected();
     super.onConnected();
+    this.clientSM.onConnected();
   }
 
   onDisconnected() {
@@ -241,7 +241,10 @@ export class RTSPClientSM extends StateMachine {
       this.rtpFactory = null;
     }
     if (this.shouldReconnect) {
-      this.start();
+      this.start().catch((e) => {
+        Log.error(`onConnected:${e}`);
+        this.reset();
+      });
     }
   }
 
@@ -256,7 +259,7 @@ export class RTSPClientSM extends StateMachine {
     if (this.currentState.name !== RTSPClientSM.STATE_STREAMS) {
       return this.transitionTo(RTSPClientSM.STATE_OPTIONS);
     } else {
-      // TODO: seekableß
+      // TODO: seekable
       let promises = [];
       for (let session in this.sessions) {
         promises.push(this.sessions[session].sendPlay(pos));
@@ -489,7 +492,7 @@ export class RTSPClientSM extends StateMachine {
 
   onOptions(data) {
     this.methods = data.headers["public"].split(",").map((e) => e.trim());
-    this.transitionTo(RTSPClientSM.STATE_DESCRIBE);
+    return this.transitionTo(RTSPClientSM.STATE_DESCRIBE);
   }
 
   sendDescribe() {
@@ -544,7 +547,7 @@ export class RTSPClientSM extends StateMachine {
         })
       );
     } else {
-      this.transitionTo(RTSPClientSM.STATE_SETUP).catch((e) => {
+      return this.transitionTo(RTSPClientSM.STATE_SETUP).catch((e) => {
         Log.error(e);
         this.parent.emit("error", e);
       });
@@ -651,7 +654,7 @@ export class RTSPClientSM extends StateMachine {
 
   onSetup() {
     Log.debug("onSetup");
-    this.transitionTo(RTSPClientSM.STATE_STREAMS);
+    return this.transitionTo(RTSPClientSM.STATE_STREAMS);
   }
 
   onRTP(_data) {
