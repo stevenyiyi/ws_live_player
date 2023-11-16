@@ -8,7 +8,6 @@ export default class BaseStream {
     this.rtspurl = options.rtspurl;
     this.video = options.video;
     this.bufferedDuration = options.bufferedDuration || 120;
-
     /// Properties defines
     Object.defineProperties(this, {
       duration: { value: NaN, writable: true },
@@ -24,7 +23,6 @@ export default class BaseStream {
       },
       buffering: { value: false, writable: true },
       seeking: { value: false, writable: true },
-      waiting: { value: false, writable: true },
       seekable: { value: false, writable: true },
       eof: { value: false, writable: true },
       audioInfo: {

@@ -21,13 +21,6 @@ export default class RTSPStream extends BaseStream {
     this.useMSE = false;
     this.remux = null;
     this.isContainer = false;
-
-    this.promises = {};
-
-    this.firstAudioPts = -1;
-    this.firstVideoPts = -1;
-    this.lastKeyframeTimestamp = -1;
-    this.firstPlaying = false;
     this.tracksReady = false;
 
     /// Sample queues
@@ -284,34 +277,34 @@ export default class RTSPStream extends BaseStream {
         this.tracksReady = true;
       }
     }
-
-    if (this.firstVideoPts === -1 && track.type === "video") {
-      this.firstVideoPts = accessunit.pts;
-    } else if (this.firstAudioPts === -1 && track.type === "audio") {
-      this.firstAudioPts = accessunit.pts;
-    }
-    if (
-      accessunit.ctype === PayloadType.H264 ||
-      (accessunit.ctype === PayloadType.H265 && accessunit.isKeyFrame())
-    ) {
-      this.lastKeyframeTimestamp = accessunit.pts;
-    }
-
     this.sampleQueues[accessunit.ctype].push(accessunit);
   }
 
-  onClear() {
-    this.buffering = false;
-    this.eventSource.dispatchEvent("clear");
-    Log.log("onClear!");
-  }
-
-  onDisconnect() {
+  reset() {
+    this.duration = NaN;
     this.buffering = false;
     /** Clear sampleQueues */
     this.sampleQueues = {};
     /** Clear tracks */
     this.tracks = null;
+    this.tracksReady = false;
+    this.firstRAP = false;
+    this.useMSE = false;
+    this.isContainer = false;
+  }
+
+  onClear() {
+    this.reset();
+    this.eventSource.dispatchEvent("clear");
+    Log.log("onClear!");
+  }
+
+  onDisconnect() {
+    this.reset();
+    /** Destory remux */
+    if (this.remux) {
+      this.remux.destroy();
+    }
     this.eventSource.dispatchEvent(
       "error",
       new ASMediaError(ASMediaError.MEDIA_ERR_NETWORK, "websocket disconected!")

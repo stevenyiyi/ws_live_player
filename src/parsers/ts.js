@@ -32,6 +32,13 @@ export class TSParser {
     this.toSkip = 0;
   }
 
+  reset() {
+    this.pesParsers.clear();
+    this.pesAsms = {};
+    this.pmtParsed = false;
+    this.toSkip = 0;
+  }
+
   parse(packet) {
     let bits = new BitArray(packet);
     if (packet[0] === 0x47) {

@@ -11,7 +11,7 @@ document.getElementById("app").innerHTML = `
 `;
 let video = document.getElementById("test_video");
 let player = new ASPlayer({
-  wsurl: "ws://localhost/ws_live",
+  wsurl: "wss://localhost/ws_live",
   rtspurl:
     "rtsp://50011200121328555763:991100@localhost:5554/live/50011200121328555763" /*?RecordTimeRange=424124111_835235113*"*/,
   cacheSize: 1000,

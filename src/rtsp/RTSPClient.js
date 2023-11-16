@@ -324,6 +324,7 @@ export class RTSPClientSM extends StateMachine {
     this.methods = [];
     this.tracks = [];
     this.rtpBuffer = {};
+    this.payParser.reset();
     for (let stream in this.streams) {
       this.streams[stream].reset();
     }

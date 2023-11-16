@@ -21,6 +21,10 @@ export class RTPPayloadParser extends TinyEvents {
     };
   }
 
+  reset() {
+    this.tsparser.reset();
+  }
+
   parse(rtp) {
     let parsed = null;
     if (rtp.media.type === "video" && rtp.media.ptype === PayloadType.H264) {
