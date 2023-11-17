@@ -6,7 +6,7 @@ import { H264Remuxer } from "./h264.js";
 import { H265Remuxer } from "./h265.js";
 import { MSE } from "../presentation/mse.js";
 import { PayloadType } from "../StreamDefine.js";
-import { ASMediaError } from "../utils/ASMediaError.js";
+import { ASMediaError } from "../api/ASMediaError.js";
 
 const LOG_TAG = "remuxer";
 const Log = getTagged(LOG_TAG);

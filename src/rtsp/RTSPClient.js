@@ -1,5 +1,5 @@
 import { getTagged } from "../utils/logger.js";
-import { ASMediaError } from "../utils/ASMediaError.js";
+import { ASMediaError } from "../api/ASMediaError.js";
 import { Url } from "../utils/url.js";
 import { StateMachine } from "../utils/statemachine.js";
 import { SDPParser } from "./sdp.js";
@@ -67,6 +67,7 @@ export class RTSPClient extends BaseClient {
           })
           .catch((e) => {
             this.connected = false;
+            this.emit("error", e);
           });
       }
     } else {

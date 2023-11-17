@@ -12,6 +12,7 @@ export class ASPlayer {
     this.stream = new RTSPStream(options);
     this._attachVideo(options.video);
     this.stream.eventSource.addEventListener("error", this._onError.bind(this));
+    this.stream.eventSource.addEventListener("info", this._onInfo.bind(this));
   }
 
   /** video play handler */
@@ -108,6 +109,18 @@ export class ASPlayer {
   /** destory */
   destroy() {
     this.stream.destory();
+  }
+
+  _onInfo(info) {
+    if (this.infoHandler) {
+      this.infoHandler(info);
+    }
+  }
+
+  _onData(data) {
+    if (this.dataHandler) {
+      this.dataHandler(data);
+    }
   }
 
   _onError(e) {

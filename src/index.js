@@ -19,7 +19,12 @@ let player = new ASPlayer({
   bufferedDuration: 15,
   reconnect: true
 });
+/** Error handling */
 player.errorHandler = (e) => {
   console.log(e);
+};
+/** Information handling */
+player.infoHandler = (info) => {
+  console.log(info);
 };
 player.start();

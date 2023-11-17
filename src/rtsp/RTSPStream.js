@@ -1,5 +1,5 @@
 import { getTagged } from "../utils/logger.js";
-import { ASMediaError } from "../utils/ASMediaError.js";
+import { ASMediaError, ASInfoNotice } from "../api/ASMediaError.js";
 import BaseStream from "../BaseStream.js";
 import { PayloadType } from "../StreamDefine.js";
 import { Remuxer } from "../remuxer/remuxer.js";
@@ -54,7 +54,7 @@ export default class RTSPStream extends BaseStream {
     this.client.reset();
     this.client.setSource(this.rtspurl);
     this.buffering = true;
-    this.client.start();
+    return this.client.start();
   }
 
   /// return Promise
@@ -149,6 +149,8 @@ export default class RTSPStream extends BaseStream {
     if (this.useMSE) {
       this.eventSource.dispatchEvent("tracks", tracks);
       this.startStreamFlush();
+      /// Dispatch avinfo
+      this.eventSource.dispatchEvent("info", this._getAVInfo());
     } else {
       this.eventSource.dispatchEvent(
         "error",
@@ -163,7 +165,6 @@ export default class RTSPStream extends BaseStream {
 
   /// Error occure notify
   onError(e) {
-    Log.error(e);
     this.buffering = false;
     this.eventSource.dispatchEvent("error", e);
     this.destroy();
@@ -348,6 +349,10 @@ export default class RTSPStream extends BaseStream {
         `MSE not supported codec:video/mp4; codecs="${codecs.join(",")}"`
       );
     }
+  }
+
+  _getAVInfo() {
+    return { video: this._getVideoInfo(), audio: this._getAudioInfo() };
   }
 
   _getAudioInfo() {

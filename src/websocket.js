@@ -1,6 +1,6 @@
 import { getTagged } from "./utils/logger.js";
 import { TinyEvents } from "./utils/event.js";
-import { ASMediaError } from "./utils/ASMediaError.js";
+import { ASMediaError } from "./api/ASMediaError.js";
 const LOG_TAG = "transport:ws";
 const Log = getTagged(LOG_TAG);
 

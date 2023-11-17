@@ -5,7 +5,7 @@ import { AACAsm } from "../parsers/aac-asm.js";
 import { TSParser } from "../parsers/ts.js";
 import { PayloadType } from "../StreamDefine.js";
 import { TinyEvents } from "../utils/event.js";
-import { ASMediaError } from "../utils/ASMediaError.js";
+import { ASMediaError } from "../api/ASMediaError.js";
 import { Log } from "../utils/logger.js";
 
 export class RTPPayloadParser extends TinyEvents {

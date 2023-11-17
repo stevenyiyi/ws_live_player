@@ -1,6 +1,6 @@
 import { ExpGolomb } from "./exp-golomb.js";
 import { NALU } from "./nalu.js";
-import { ASMediaError } from "../utils/ASMediaError.js";
+import { ASMediaError } from "../api/ASMediaError.js";
 export class H264Parser {
   constructor(track) {
     this.track = track;

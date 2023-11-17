@@ -5,7 +5,7 @@ import { H26XPES } from "./pes_h26x.js";
 import { AACPES } from "./pes_aac.js";
 import { G7XXPES } from "./pes_g7xx.js";
 import { PayloadType, PESType } from "../StreamDefine.js";
-import { ASMediaError } from "../utils/ASMediaError.js";
+import { ASMediaError } from "../api/ASMediaError.js";
 const LOG_TAG = "parses:ts";
 const Log = getTagged(LOG_TAG);
 
