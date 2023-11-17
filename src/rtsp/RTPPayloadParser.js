@@ -49,10 +49,7 @@ export class RTPPayloadParser extends TinyEvents {
       let offset = 0;
       if (data.byteLength % TSParser.PACKET_LENGTH) {
         Log.error(`Invalid rtp ts payload length:${data.ByteLength}`);
-        throw new ASMediaError(
-          ASMediaError.MEDIA_ERR_AV,
-          `Invalid rtp ts payload length:${data.ByteLength}`
-        );
+        return;
       }
 
       while (offset < data.byteLength) {
@@ -103,8 +100,8 @@ class RTPH264Parser {
     if (nalus) {
       return new MediaAccessunit(
         rtp.type,
-        rtp.getTimestampMS(),
-        rtp.getTimestampMS(),
+        rtp.getTimestamp(),
+        rtp.getTimestamp(),
         nalus
       );
     } else {
@@ -123,8 +120,8 @@ class RTPH265Parser {
     if (nalus) {
       return new MediaAccessunit(
         rtp.type,
-        rtp.getTimestampMS(),
-        rtp.getTimestampMS(),
+        rtp.getTimestamp(),
+        rtp.getTimestamp(),
         nalus
       );
     } else {
@@ -146,7 +143,7 @@ class RTPAACParser {
   parse(rtp) {
     let acus = this.asm.onAACFragment(rtp);
     let ts =
-      ((Math.round(rtp.getTimestampMS() / 1024) << 10) * 90000) /
+      ((Math.round(rtp.getTimestamp() / 1024) << 10) * 90000) /
       this.config.samplerate;
     return new MediaAccessunit(rtp.type, ts, ts, acus);
   }
@@ -156,8 +153,8 @@ class RTPGXXParser {
   parse(rtp) {
     return new MediaAccessunit(
       rtp.type,
-      rtp.getTimestampMS(),
-      rtp.getTimestampMS(),
+      rtp.getTimestamp(),
+      rtp.getTimestamp(),
       rtp.getPayload()
     );
   }

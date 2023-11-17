@@ -58,15 +58,13 @@ export default class RTP {
     }
 
     this.data = pkt.subarray(pktIndex);
-    // this.timestamp = 1000 * (this.timestamp / this.media.rtpmap[this.pt].clock);
-    // console.log(this);
   }
   getPayload() {
     return this.data;
   }
 
-  getTimestampMS() {
-    return this.timestamp; //1000 * (this.timestamp / this.media.rtpmap[this.pt].clock);
+  getTimestamp() {
+    return this.timestamp;
   }
 
   toString() {

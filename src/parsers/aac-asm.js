@@ -45,7 +45,7 @@ export class AACAsm {
     let auHeadersLengthPadded = 0;
     let offset = 0;
     let ts =
-      ((Math.round(pkt.getTimestampMS() / 1024) << 10) * 90000) /
+      ((Math.round(pkt.getTimestamp() / 1024) << 10) * 90000) /
       this.config.samplerate;
     if (0 !== configHeaderLength) {
       /* The AU header section is not empty, read it from payload */
