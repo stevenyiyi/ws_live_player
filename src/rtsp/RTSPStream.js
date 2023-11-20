@@ -60,6 +60,9 @@ export default class RTSPStream extends BaseStream {
   /// return Promise
   seek(offset) {
     /// RTSP seek to postion
+    if (this.remux) {
+      this.remux.discontiguous();
+    }
     return this.client.seek(offset);
   }
 

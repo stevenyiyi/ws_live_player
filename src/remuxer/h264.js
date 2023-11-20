@@ -7,14 +7,11 @@ const Log = getTagged("remuxer:h264");
 export class H264Remuxer extends BaseRemuxer {
   constructor(timescale, scaleFactor = 1, params = {}) {
     super(timescale, scaleFactor);
-
+    this.firstDTS = 0;
     this.nextDts = undefined;
     this.readyToDecode = false;
     this.initialized = false;
 
-    this.firstDTS = 0;
-    this.firstPTS = 0;
-    this.lastDTS = undefined;
     this.lastSampleDuration = 0;
     this.lastDurations = [];
     // this.timescale = 90000;
@@ -36,7 +33,6 @@ export class H264Remuxer extends BaseRemuxer {
     this.samples = [];
     this.lastGopDTS = -99999999999999;
     this.gop = [];
-    this.firstUnit = true;
 
     this.h264 = new H264Parser(this.mp4track);
 
@@ -78,6 +74,17 @@ export class H264Remuxer extends BaseRemuxer {
     this.h264.parsePPS(pps);
   }
 
+  /** Seek lead to iscontiguous */
+  discontiguous() {
+    this.firstDTS = 0;
+    this.lastSampleDuration = 0;
+    this.lastDurations = [];
+    this.gop = [];
+    this.nextDts = undefined;
+    this.samples = [];
+    this.lastGopDTS = -99999999999999;
+  }
+
   remux(nalu) {
     if (this.lastGopDTS < nalu.dts) {
       this.gop.sort(BaseRemuxer.dtsSortFunc);
@@ -96,10 +103,6 @@ export class H264Remuxer extends BaseRemuxer {
       }
 
       for (let unit of this.gop) {
-        // if (this.firstUnit) {
-        //     unit.ntype = 5;//NALU.IDR;
-        //     this.firstUnit = false;
-        // }
         if (super.remux.call(this, unit)) {
           this.mp4track.len += unit.getSize();
         }

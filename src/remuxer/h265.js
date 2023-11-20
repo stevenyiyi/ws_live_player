@@ -13,7 +13,6 @@ export class H265Remuxer extends BaseRemuxer {
     this.initialized = false;
 
     this.firstDTS = 0;
-    this.firstPTS = 0;
     this.lastDTS = undefined;
     this.lastSampleDuration = 0;
     this.lastDurations = [];
@@ -73,6 +72,17 @@ export class H265Remuxer extends BaseRemuxer {
     if (this.mp4track.vps && this.mp4track.sps && this.mp4track.pps) {
       this.readyToDecode = true;
     }
+  }
+
+  /** Seek lead to iscontiguous */
+  discontiguous() {
+    this.firstDTS = 0;
+    this.lastSampleDuration = 0;
+    this.lastDurations = [];
+    this.gop = [];
+    this.nextDts = undefined;
+    this.samples = [];
+    this.lastGopDTS = -99999999999999;
   }
 
   _scaled(timestamp) {
