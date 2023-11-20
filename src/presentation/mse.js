@@ -321,6 +321,7 @@ export class MSE {
   }
 
   setDurationInfinity() {
+    if (!this.is_live) return;
     for (let idx in this.buffers) {
       if (this.buffers[idx].sourceBuffer.updating) return;
     }

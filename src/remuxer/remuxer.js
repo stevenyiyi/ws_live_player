@@ -43,7 +43,6 @@ export class Remuxer {
     this.mse_ready = true;
 
     this.reset();
-
     this.errorListener = this.mseError.bind(this);
     this.closeListener = this.mseClose.bind(this);
     this.errorDecodeListener = this.mseErrorDecode.bind(this);
@@ -55,6 +54,12 @@ export class Remuxer {
     this.mseEventSource.on("error", this.errorListener);
     this.mseEventSource.on("sourceclosed", this.closeListener);
     this.mseEventSource.on("errordecode", this.errorDecodeListener);
+  }
+
+  discontiguous() {
+    for (let track_type in this.tracks) {
+      this.tracks[track_type].discontiguous();
+    }
   }
 
   async reset() {
