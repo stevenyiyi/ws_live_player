@@ -16,7 +16,7 @@ export class Remuxer {
     return {
       [PayloadType.H264]: H264Remuxer,
       [PayloadType.H265]: H265Remuxer,
-      [PayloadType.AAC]: AACRemuxer
+      [PayloadType.AAC]: AACRemuxer,
     };
   }
 
@@ -24,7 +24,7 @@ export class Remuxer {
     return {
       [PayloadType.H264]: 1,
       [PayloadType.H265]: 1,
-      [PayloadType.AAC]: 0
+      [PayloadType.AAC]: 0,
     };
   }
 
@@ -32,7 +32,7 @@ export class Remuxer {
     return {
       [PayloadType.H264]: 90000,
       [PayloadType.H265]: 90000,
-      [PayloadType.AAC]: 0
+      [PayloadType.AAC]: 0,
     };
   }
 
@@ -54,12 +54,6 @@ export class Remuxer {
     this.mseEventSource.on("error", this.errorListener);
     this.mseEventSource.on("sourceclosed", this.closeListener);
     this.mseEventSource.on("errordecode", this.errorDecodeListener);
-  }
-
-  discontiguous() {
-    for (let track_type in this.tracks) {
-      this.tracks[track_type].discontiguous();
-    }
   }
 
   async reset() {
@@ -90,7 +84,7 @@ export class Remuxer {
       this.tracks[track.type] = new Remuxer.TrackConverters[track.type](
         Remuxer.TrackTimescale[track.type],
         Remuxer.TrackScaleFactor[track.type],
-        track.params
+        track.params,
       );
       if (track.offset) {
         this.tracks[track.type].timeOffset = track.offset;
@@ -130,7 +124,7 @@ export class Remuxer {
       let track = this.tracks[track_type];
       if (!MSE.isSupported([track.mp4track.codec])) {
         throw new Error(
-          `${track.mp4track.type} codec ${track.mp4track.codec} is not supported`
+          `${track.mp4track.type} codec ${track.mp4track.codec} is not supported`,
         );
       }
       tracks.push(track.mp4track);
@@ -150,7 +144,7 @@ export class Remuxer {
         hasavc,
         [track.mp4track],
         track.duration * track.timescale,
-        track.timescale
+        track.timescale,
       );
       initmse.push(this.initMSE(track_type, track.mp4track.codec));
     }
@@ -166,7 +160,7 @@ export class Remuxer {
       return this.mse
         .setCodec(
           track_type,
-          `${PayloadType.map[track_type]}/mp4; codecs="${codec}"`
+          `${PayloadType.map[track_type]}/mp4; codecs="${codec}"`,
         )
         .then(() => {
           this.mse.feed(track_type, this.initSegments[track_type]);
@@ -178,8 +172,8 @@ export class Remuxer {
         "error",
         new ASMediaError(
           ASMediaError.MEDIA_ERR_DECODE,
-          `Codecs:${this.codecs} are not supported`
-        )
+          `Codecs:${this.codecs} are not supported`,
+        ),
       );
     }
   }
@@ -187,14 +181,14 @@ export class Remuxer {
   mseError(e) {
     this.eventSource.dispatchEvent(
       "error",
-      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, e)
+      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, e),
     );
   }
 
   mseClose() {
     this.eventSource.dispatchEvent(
       "error",
-      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, "mse closed!")
+      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, "mse closed!"),
     );
   }
 
@@ -219,7 +213,7 @@ export class Remuxer {
           )
             return;
           Log.debug(
-            `Init MSE for track ${this.tracks[track_type].mp4track.type}`
+            `Init MSE for track ${this.tracks[track_type].mp4track.type}`,
           );
         }
         this.eventSource.dispatchEvent("ready");
@@ -231,7 +225,7 @@ export class Remuxer {
         if (pay && pay.byteLength) {
           this.mse.feed(track_type, [
             MP4.moof(track.seq, track.scaled(track.firstDTS), track.mp4track),
-            MP4.mdat(pay)
+            MP4.mdat(pay),
           ]);
           track.flush();
         }
@@ -249,6 +243,10 @@ export class Remuxer {
       while (queue.length) {
         let accessunit = queue.shift();
         if (this.tracks[qidx]) {
+          if (accessunit.discontinuity) {
+            Log.debug(`discontinuity, dts:${accessunit.dts}`);
+            this.tracks[qidx].insertDscontinuity();
+          }
           for (const unit of accessunit.units) {
             this.tracks[qidx].remux(unit);
           }

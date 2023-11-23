@@ -60,9 +60,6 @@ export default class RTSPStream extends BaseStream {
   /// return Promise
   seek(offset) {
     /// RTSP seek to postion
-    if (this.remux) {
-      this.remux.discontiguous();
-    }
     return this.client.seek(offset);
   }
 
@@ -77,7 +74,7 @@ export default class RTSPStream extends BaseStream {
   }
 
   pause() {
-    return this.client.pause();
+    /**return this.client.pause();*/
   }
 
   stop() {
@@ -159,8 +156,8 @@ export default class RTSPStream extends BaseStream {
         "error",
         new ASMediaError(
           ASMediaError.MEDIA_ERR_SRC_NOT_SUPPORTED,
-          "Codec not supported using MSE!"
-        )
+          "Codec not supported using MSE!",
+        ),
       );
       this.destroy();
     }
@@ -187,7 +184,7 @@ export default class RTSPStream extends BaseStream {
     if (!this.firstRAP) {
       /// Drop accessunit ...
       Log.warn(
-        "Receive accessunit, but not found track, discard this access unit!"
+        "Receive accessunit, but not found track, discard this access unit!",
       );
       return;
     }
@@ -255,8 +252,8 @@ export default class RTSPStream extends BaseStream {
           "error",
           new ASMediaError(
             ASMediaError.MEDIA_ERR_AV,
-            "Receive AAC accessunit, but have not config information!"
-          )
+            "Receive AAC accessunit, but have not config information!",
+          ),
         );
         this.destory();
       } else {
@@ -311,7 +308,10 @@ export default class RTSPStream extends BaseStream {
     }
     this.eventSource.dispatchEvent(
       "error",
-      new ASMediaError(ASMediaError.MEDIA_ERR_NETWORK, "websocket disconected!")
+      new ASMediaError(
+        ASMediaError.MEDIA_ERR_NETWORK,
+        "websocket disconected!",
+      ),
     );
   }
 
@@ -349,7 +349,7 @@ export default class RTSPStream extends BaseStream {
       this.remux.attachClient(this);
     } else {
       Log.error(
-        `MSE not supported codec:video/mp4; codecs="${codecs.join(",")}"`
+        `MSE not supported codec:video/mp4; codecs="${codecs.join(",")}"`,
       );
     }
   }
@@ -375,7 +375,7 @@ export default class RTSPStream extends BaseStream {
           return {
             codec: track.params.config.codec,
             samplerate: track.params.config.samplerate,
-            channel: track.params.config.channel
+            channel: track.params.config.channel,
           };
         }
       } else {
@@ -383,7 +383,7 @@ export default class RTSPStream extends BaseStream {
           return {
             codec: track.params.config.codec,
             samplerate: track.params.config.samplerate,
-            channel: track.params.config.channel
+            channel: track.params.config.channel,
           };
         }
       }

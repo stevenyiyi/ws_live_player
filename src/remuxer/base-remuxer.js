@@ -42,10 +42,7 @@ export class BaseRemuxer {
     this.samples = [];
     this.seq = 1;
     this.tsAlign = 1;
-  }
-
-  discontiguous() {
-    Log.error("Can't call discontiguous!");
+    this.pendingUnit = null;
   }
 
   scaled(timestamp) {
@@ -58,14 +55,24 @@ export class BaseRemuxer {
 
   remux(unit) {
     if (unit) {
-      this.samples.push({
-        unit: unit,
-        pts: unit.pts,
-        dts: unit.dts
-      });
-      return true;
+      let len = 0;
+      if (!this.pendingUnit) {
+        this.pendingUnit = unit;
+      } else {
+        let dur = unit.dts - this.pendingUnit.dts;
+        this.samples.push({
+          unit: this.pendingUnit,
+          pts: this.pendingUnit.pts,
+          dts: this.pendingUnit.dts,
+          duration: dur,
+          cts: this.pendingUnit.pts - this.pendingUnit.dts,
+        });
+        len = this.pendingUnit.getSize();
+        this.pendingUnit = unit;
+      }
+      return len;
     }
-    return false;
+    return 0;
   }
 
   static toMS(timestamp) {
@@ -75,24 +82,31 @@ export class BaseRemuxer {
   setConfig(config) {}
 
   insertDscontinuity() {
-    this.samples.push(null);
+    this.pendingUnit = null;
+    Log.debug("insertDscontinuity");
   }
 
   init(initPTS, initDTS, shouldInitialize = true) {
-    this.initPTS = Math.min(
-      initPTS,
-      this.samples[0].dts /*- this.unscaled(this.timeOffset)*/
-    );
-    this.initDTS = Math.min(
-      initDTS,
-      this.samples[0].dts /*- this.unscaled(this.timeOffset)*/
-    );
+    this.initPTS = Math.min(initPTS, this.samples[0].dts);
+    this.initDTS = Math.min(initDTS, this.samples[0].dts);
     Log.debug(
       `Initial pts=${this.initPTS} dts=${this.initDTS} offset=${this.unscaled(
-        this.timeOffset
-      )}`
+        this.timeOffset,
+      )}`,
     );
     this.initialized = shouldInitialize;
+  }
+
+  cacheSize() {
+    let duration = 0;
+    for (const sample of this.samples) {
+      duration += sample.duration;
+    }
+    if (duration > 0) {
+      /** Convert to ms */
+      duration = (duration * 1000) / BaseRemuxer.MP4_TIMESCALE;
+    }
+    return duration;
   }
 
   flush() {

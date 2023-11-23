@@ -65,12 +65,12 @@ export class H265Parser {
     scodecs.push(
       `${H265Parser.generalProfileSpaceString(config.GeneralProfileSpace)}${
         config.GeneralProfileIdc
-      }`
+      }`,
     );
     scodecs.push(
       H265Parser.reverse_bits_and_hex_encode(
-        config.GeneralProfileCompatibilityFlags
-      )
+        config.GeneralProfileCompatibilityFlags,
+      ),
     );
     scodecs.push((config.GeneralTierFlag ? "H" : "L") + config.GeneralLevelIdc);
 
@@ -81,7 +81,7 @@ export class H265Parser {
       (contraints & 0x00000000ff000000) >> 24,
       (contraints & 0x0000000000ff0000) >> 16,
       (contraints & 0x000000000000ff00) >> 8,
-      contraints & 0x00000000000000ff
+      contraints & 0x00000000000000ff,
     );
 
     let count = contraintsBuf.length;
@@ -93,7 +93,7 @@ export class H265Parser {
 
     for (let i = 0; i < count; i++) {
       scodecs.push(
-        contraintsBuf[i].toString(16).padStart(2, "0").toUpperCase()
+        contraintsBuf[i].toString(16).padStart(2, "0").toUpperCase(),
       );
     }
     codec += scodecs.join(".");
@@ -180,7 +180,7 @@ export class H265Parser {
         let data = new DataView(
           unit.data.buffer,
           unit.data.byteOffset,
-          unit.data.byteLength
+          unit.data.byteLength,
         );
         let byte_idx = 0;
         let pay_type = data.getUint8(byte_idx);
@@ -206,6 +206,8 @@ export class H265Parser {
         ); */
         // debugger;
         break;
+      case HEVC_NALU.DELIMITER:
+      case HEVC_NALU.FILTER:
       case HEVC_NALU.EOS:
       case HEVC_NALU.EOB:
         push = false;
@@ -246,7 +248,7 @@ export class H265Parser {
     config["GeneralProfileIdc"] = reader.readBits(5);
     config["GeneralProfileCompatibilityFlags"] = reader.readUInt();
     config["GeneralConstraintIndicatorFlags"] = Number(
-      (reader.readBits(16) << 32) | reader.readBits(32)
+      (reader.readBits(16) << 32) | reader.readBits(32),
     );
     config["GeneralLevelIdc"] = reader.readBits(8);
     /** vps_sub_layer_ordering_info_present_flag */
@@ -375,7 +377,7 @@ export class H265Parser {
     return {
       width: pic_width_in_luma_samples,
       height: pic_height_in_luma_samples,
-      hasBFrames: spsSubLayerOrderingInfoPresentFlag === 1 ? true : false
+      hasBFrames: spsSubLayerOrderingInfoPresentFlag === 1 ? true : false,
     };
   }
 }

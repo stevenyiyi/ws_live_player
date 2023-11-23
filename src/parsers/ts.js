@@ -30,6 +30,7 @@ export class TSParser {
     this.pesAsms = {};
     this.ontracks = null;
     this.toSkip = 0;
+    this.discontinuitys = new Map();
   }
 
   reset() {
@@ -57,14 +58,28 @@ export class TSParser {
       /// Ignore continuity_counter (4)
       bits.skipBits(4);
 
-      if (adaptation_field_control === 2 || adaptation_field_control === 3) {
+      if (adaptation_field_control === 3) {
         /// Parse Adaptation_field
         /// adaptation_field_length(8)
         let adaptSize = bits.readBits(8);
-        this.toSkip = bits.skipBits(adaptSize * 8);
+        if (adaptSize > 0 && payStart && pid > 0) {
+          /// Parse discontinuity_indicator
+          let discontinuity_indicator = bits.readBits(1);
+          if (discontinuity_indicator > 0) {
+            Log.debug(`pid:${pid} discontinuity:${discontinuity_indicator}`);
+          }
+          this.discontinuitys.set(pid, discontinuity_indicator ? true : false);
+          /// No parse
+          this.toSkip = bits.skipBits(adaptSize * 8 - 1);
+        } else {
+          this.toSkip = bits.skipBits(adaptSize * 8);
+        }
+
         if (bits.finished()) {
           return null;
         }
+      } else if (adaptation_field_control === 1) {
+        this.discontinuitys.set(pid, false);
       }
 
       if (adaptation_field_control === 0 || adaptation_field_control === 2) {
@@ -80,7 +95,19 @@ export class TSParser {
         let pes = this.pesAsms[pid].feed(payload, payStart);
         if (pes) {
           /// Log.debug(`pes buffer size:${pes.data.byteLength},pts:${pes.pts}`);
-          return this.pesParsers.get(pid).parse(pes);
+          let accessuint = this.pesParsers.get(pid).parse(pes);
+          if (accessuint) {
+            let discontinuity = this.discontinuitys.get(pid);
+            if (discontinuity) {
+              Log.debug(
+                `pes pid:${pid} accessunit length:${accessuint.byteLength},discontinuity is true!`
+              );
+              accessuint.discontinuity = true;
+            } else {
+              accessuint.discontinuity = false;
+            }
+          }
+          return accessuint;
         }
       } else {
         if (pid === 0) {

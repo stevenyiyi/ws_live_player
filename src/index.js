@@ -13,11 +13,11 @@ let video = document.getElementById("test_video");
 let player = new ASPlayer({
   wsurl: "wss://192.168.3.100/ws_live",
   rtspurl:
-    "rtsp://50010303121110099054:991100@192.168.3.100:5554/live/50010303121329905401?RecordTimeRange=1700270399_1700272552",
+    "rtsp://50010303121110099054:991100@192.168.3.100:5554/live/50010303121329905401", //?RecordTimeRange=1700270399_1700272552",
   cacheSize: 1000,
   video: video,
   bufferedDuration: 15,
-  reconnect: true
+  reconnect: true,
 });
 /** Error handling */
 player.errorHandler = (e) => {

@@ -6,11 +6,18 @@ export class MediaAccessunit {
     this.dts = dts;
     this.units = units;
     this.config = null;
+    this.discontinuity = false;
 
     /// Properties defines
     Object.defineProperties(this, {
       byteLength: {
-        get: function getByteLength() {}
+        get: function () {
+          let bytes = 0;
+          for (const unit of this.units) {
+            bytes += unit.getSize();
+          }
+          return bytes;
+        }
       }
     });
   }

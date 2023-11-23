@@ -30,7 +30,7 @@ export class H265Remuxer extends BaseRemuxer {
       height: 0,
       timescale: timescale,
       duration: timescale,
-      samples: [] /** mp4 samples */
+      samples: [] /** mp4 samples */,
     };
     this.samples = [];
     this.lastGopDTS = -99999999999999;
@@ -72,17 +72,6 @@ export class H265Remuxer extends BaseRemuxer {
     if (this.mp4track.vps && this.mp4track.sps && this.mp4track.pps) {
       this.readyToDecode = true;
     }
-  }
-
-  /** Seek lead to iscontiguous */
-  discontiguous() {
-    this.firstDTS = 0;
-    this.lastSampleDuration = 0;
-    this.lastDurations = [];
-    this.gop = [];
-    this.nextDts = undefined;
-    this.samples = [];
-    this.lastGopDTS = -99999999999999;
   }
 
   _scaled(timestamp) {
@@ -180,7 +169,7 @@ export class H265Remuxer extends BaseRemuxer {
         // Log.debug(`Sample duration: ${sampleDuration}`);
         if (sampleDuration < 0) {
           Log.log(
-            `invalid HEVC sample duration at PTS/DTS: ${pts}/${dts}|lastDTS: ${lastDTS}:${sampleDuration}`
+            `invalid HEVC sample duration at PTS/DTS: ${pts}/${dts}|lastDTS: ${lastDTS}:${sampleDuration}`,
           );
           this.mp4track.len -= unit.getSize();
           continue;
@@ -209,7 +198,7 @@ export class H265Remuxer extends BaseRemuxer {
           } else {
             if (delta < 0) {
               Log.log(
-                `skip frame from the past at DTS=${dts} with expected DTS=${this.nextDts}`
+                `skip frame from the past at DTS=${dts} with expected DTS=${this.nextDts}`,
               );
               this.mp4track.len -= unit.getSize();
               continue;
@@ -229,8 +218,8 @@ export class H265Remuxer extends BaseRemuxer {
           isDependedOn: 0,
           hasRedundancy: 0,
           degradPrio: 0,
-          isNonSync: 0
-        }
+          isNonSync: 0,
+        },
       };
       let flags = mp4Sample.flags;
       if (sample.unit.isKeyframe() === true) {

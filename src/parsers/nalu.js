@@ -56,7 +56,7 @@ export class NALU {
       [NALU.SEI]: "SEI",
       [NALU.SPS]: "SPS",
       [NALU.PPS]: "PPS",
-      [NALU.NDR]: "NDR"
+      [NALU.NDR]: "NDR",
     };
   }
 

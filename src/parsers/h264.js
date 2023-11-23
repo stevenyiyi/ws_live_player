@@ -69,7 +69,7 @@ export class H264Parser {
         let data = new DataView(
           unit.data.buffer,
           unit.data.byteOffset,
-          unit.data.byteLength
+          unit.data.byteLength,
         );
         let byte_idx = 0;
         let pay_type = data.getUint8(byte_idx);
@@ -95,6 +95,8 @@ export class H264Parser {
         ); */
         // debugger;
         break;
+      case NALU.DELIMITER:
+      case NALU.FILTER:
       case NALU.EOSEQ:
       case NALU.EOSTR:
         push = false;
@@ -295,14 +297,14 @@ export class H264Parser {
           case 255: {
             sarRatio = [
               (decoder.readUByte() << 8) | decoder.readUByte(),
-              (decoder.readUByte() << 8) | decoder.readUByte()
+              (decoder.readUByte() << 8) | decoder.readUByte(),
             ];
             break;
           }
           default:
             throw new ASMediaError(
               ASMediaError.MEDIA_ERR_DECODE,
-              `Invalid avc sps aspectRatioIdc: ${aspectRatioIdc}`
+              `Invalid avc sps aspectRatioIdc: ${aspectRatioIdc}`,
             );
         }
         if (sarRatio) {
@@ -329,7 +331,7 @@ export class H264Parser {
         fixedFrameRate = decoder.readBoolean();
         frameDuration = timeScale / (2 * unitsInTick);
         console.log(
-          `timescale: ${timeScale}; unitsInTick: ${unitsInTick}; fixedFramerate: ${fixedFrameRate}; avgFrameDuration: ${frameDuration}`
+          `timescale: ${timeScale}; unitsInTick: ${unitsInTick}; fixedFramerate: ${fixedFrameRate}; avgFrameDuration: ${frameDuration}`,
         );
       }
     }
@@ -338,7 +340,7 @@ export class H264Parser {
         ((picWidthInMbsMinus1 + 1) * 16 -
           frameCropLeftOffset * 2 -
           frameCropRightOffset * 2) *
-          sarScale
+          sarScale,
       ),
       height:
         (2 - frameMbsOnlyFlag) * (picHeightInMapUnitsMinus1 + 1) * 16 -
@@ -346,7 +348,7 @@ export class H264Parser {
           (frameCropTopOffset + frameCropBottomOffset),
       hasBFrames: picOrderCntType === 2 ? false : true,
       fixedFrameRate: fixedFrameRate,
-      frameDuration: frameDuration
+      frameDuration: frameDuration,
     };
   }
 
