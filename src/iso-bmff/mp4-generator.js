@@ -21,6 +21,7 @@ export class MP4 {
       mdia: [],
       mfhd: [],
       minf: [],
+      sidx: [],
       moof: [],
       moov: [],
       mp4a: [],
@@ -364,6 +365,48 @@ export class MP4 {
         MP4.stbl(track)
       );
     }
+  }
+
+  static sidx(basePresentTime, track, referenced_size) {
+    let startWithSAP = track.samples[0].flags.isNonSync ? false : true;
+    return MP4.box(MP4.types.sidx, new Uint8Array(
+      [0x00,
+        0x00,
+        0x00,
+        0x00, /// version and flags
+        0x00,
+        0x00,
+        0x00,
+        0x01, /// reference_ID muset be 1
+        (track.timescale >> 24) & 0xff,
+        (track.timescale >> 16) & 0xff,
+        (track.timescale >> 8) & 0xff,
+        track.timescale & 0xff,  /// timescale
+        (basePresentTime >> 24) & 0xff,
+        (basePresentTime >> 16) & 0xff,
+        (basePresentTime >> 8) & 0xff,
+        basePresentTime & 0xff, /// earliest_presentation_time
+        0x00,
+        0x00,
+        0x00,
+        0x00, ///  first_offset
+        0x00,
+        0x00, /// reserved
+        0x00,
+        0x01, /// reference_count
+        (referenced_size >> 24) & 0xff,
+        (referenced_size >> 16) & 0xff,
+        (referenced_size >> 8) & 0xff,
+        referenced_size & 0xff,  /// referenced_size
+        (track.duration >> 24) & 0xff,
+        (track.duration >> 16) & 0xff,
+        (track.duration >> 8) & 0xff,
+        track.duration & 0xff,  /// subsegment_duration
+        startWithSAP ? 0x80 : 0x00, /// startsWithSAP
+        0x00,
+        0x00,
+        0x00
+    ]));
   }
 
   static moof(sn, baseMediaDecodeTime, track) {
@@ -1094,7 +1137,7 @@ export class MP4 {
         MP4.types.tfhd,
         new Uint8Array([
           0x00, // version 0
-          0x00,
+          0x02,
           0x00,
           0x00, // flags
           id >> 24,

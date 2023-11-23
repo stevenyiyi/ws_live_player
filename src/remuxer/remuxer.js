@@ -24,7 +24,7 @@ export class Remuxer {
     return {
       [PayloadType.H264]: 1,
       [PayloadType.H265]: 1,
-      [PayloadType.AAC]: 0,
+      [PayloadType.AAC]: 1,
     };
   }
 
@@ -32,7 +32,7 @@ export class Remuxer {
     return {
       [PayloadType.H264]: 90000,
       [PayloadType.H265]: 90000,
-      [PayloadType.AAC]: 0,
+      [PayloadType.AAC]: 90000,
     };
   }
 
@@ -223,9 +223,14 @@ export class Remuxer {
         let track = this.tracks[track_type];
         let pay = track.getPayload();
         if (pay && pay.byteLength) {
+          
+          let moof = MP4.moof(track.seq, track.scaled(track.firstDTS), track.mp4track);
+          let mdat = MP4.mdat(pay);
+          let referenceSize = moof.byteLength + mdat.byteLength;
           this.mse.feed(track_type, [
-            MP4.moof(track.seq, track.scaled(track.firstDTS), track.mp4track),
-            MP4.mdat(pay),
+            MP4.sidx(track.firstPTS, track.mp4track, referenceSize),
+            moof,
+            mdat,
           ]);
           track.flush();
         }
@@ -245,6 +250,7 @@ export class Remuxer {
         if (this.tracks[qidx]) {
           if (accessunit.discontinuity) {
             Log.debug(`discontinuity, dts:${accessunit.dts}`);
+            this.MSE.abort(qidx);
             this.tracks[qidx].insertDscontinuity();
           }
           for (const unit of accessunit.units) {

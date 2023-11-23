@@ -23,7 +23,7 @@ export class AACRemuxer extends BaseRemuxer {
       type: "audio",
       fragmented: true,
       channelCount: 0,
-      audiosamplerate: this.timescale,
+      audiosamplerate: 0,
       duration: 0,
       timescale: this.timescale,
       volume: 1,
@@ -39,16 +39,8 @@ export class AACRemuxer extends BaseRemuxer {
   setConfig(config) {
     this.mp4track.channelCount = config.channels;
     this.mp4track.audiosamplerate = config.samplerate;
-    if (!this.mp4track.duration) {
-      this.mp4track.duration =
-        (this.duration ? this.duration : 1) * config.samplerate;
-    }
-    this.mp4track.timescale = config.samplerate;
     this.mp4track.config = config.config;
     this.mp4track.codec = config.codec;
-    this.timescale = config.samplerate;
-    this.scaleFactor = BaseRemuxer.MP4_TIMESCALE / config.samplerate;
-    this.expectedSampleDuration = 1024 * this.scaleFactor;
     this.readyToDecode = true;
   }
 
@@ -73,21 +65,25 @@ export class AACRemuxer extends BaseRemuxer {
       mp4Sample = {
         size: unit.getSize(),
         cts: 0,
-        duration: 1024,
+        duration: sample.duration,
         flags: {
           isLeading: 0,
+          dependsOn: 2,
           isDependedOn: 0,
+          paddingValue: 0,
           hasRedundancy: 0,
           degradPrio: 0,
-          dependsOn: 1,
+          isNonSync: 0,
         },
       };
 
       payload.set(unit.getData(), offset);
       offset += unit.getSize();
       samples.push(mp4Sample);
+      this.mp4track.duration += mp4Sample.duration;
       if (lastDTS === undefined) {
         this.firstDTS = dts;
+        this.firstPTS = pts;
         ///Log.debug(`AAC first dts:${this.firstDTS}`);
       }
       lastDTS = dts;

@@ -273,6 +273,10 @@ export class MSEBuffer {
       this.feedNext();
     }
   }
+
+  abort() {
+    this.sourceBuffer.abort();
+  }
 }
 
 export class MSE {
@@ -453,5 +457,9 @@ export class MSE {
     if (this.buffers[track]) {
       this.buffers[track].feed(data);
     }
+  }
+
+  abort(track) {
+    this.buffers[track].abort();
   }
 }

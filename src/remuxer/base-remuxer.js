@@ -83,6 +83,8 @@ export class BaseRemuxer {
 
   insertDscontinuity() {
     this.pendingUnit = null;
+    this.samples = [];
+    this.mp4track.len = 0;
     Log.debug("insertDscontinuity");
   }
 
@@ -112,6 +114,7 @@ export class BaseRemuxer {
   flush() {
     this.seq++;
     this.mp4track.len = 0;
+    this.mp4track.duration = 0;
     this.mp4track.samples = [];
   }
 

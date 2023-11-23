@@ -8,6 +8,7 @@ export class H264Remuxer extends BaseRemuxer {
   constructor(timescale, scaleFactor = 1, params = {}) {
     super(timescale, scaleFactor);
     this.firstDTS = 0;
+    this.firstPTS = 0;
     this.readyToDecode = false;
     this.initialized = false;
     this.lastDTS = undefined;
@@ -26,7 +27,7 @@ export class H264Remuxer extends BaseRemuxer {
       width: 0,
       height: 0,
       timescale: timescale,
-      duration: timescale,
+      duration: 0,
       samples: [],
     };
     this.samples = [];
@@ -127,7 +128,9 @@ export class H264Remuxer extends BaseRemuxer {
         cts: sample.cts,
         flags: {
           isLeading: 0,
+          dependsOn: 0,
           isDependedOn: 0,
+          paddingValue: 0,
           hasRedundancy: 0,
           degradPrio: 0,
           isNonSync: 0,
@@ -148,8 +151,10 @@ export class H264Remuxer extends BaseRemuxer {
       payload.set(unit.getData(), offset);
       offset += unit.getSize();
       samples.push(mp4Sample);
+      this.mp4track.duration += mp4Sample.duration;
       if (lastDTS === undefined) {
         this.firstDTS = dts;
+        this.firstPTS = pts;
         ///Log.debug(`AVC fitst dts:${this.firstDTS}`);
       }
       lastDTS = dts;

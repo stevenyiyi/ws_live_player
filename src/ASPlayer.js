@@ -85,8 +85,20 @@ export class ASPlayer {
       },
       false
     );
-  }
 
+    /** video canpaly handler */
+    this._video.addEventListener(
+      "canplay",
+     ()=> {
+      /// segmentDuration = video.duration / totalSegments;
+        this._video.play().catch((e)=>{
+          if(e.name === "NotAllowedError") {
+            this._video.muted = true;
+            this._video.play();
+          }
+        });
+  },false);
+}
   // TODO: check native support
   isPlaying() {
     return !(this._video.paused || this.stream.paused);
