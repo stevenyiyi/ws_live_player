@@ -6,17 +6,16 @@ import { HEVC_NALU } from "../parsers/nalu-hevc.js";
 const Log = getTagged("remuxer:h265");
 
 export class H265Remuxer extends BaseRemuxer {
-  constructor(timescale, scaleFactor = 1, params = {}) {
-    super(timescale, scaleFactor);
-    this.nextDts = undefined;
+  constructor(timescale, scaleFactor = 1, drainDuration, params = {}) {
+    super(timescale, scaleFactor, drainDuration);
+   
     this.readyToDecode = false;
     this.initialized = false;
 
     this.firstDTS = 0;
+    this.firstPTS = 0;
     this.lastDTS = undefined;
-    this.lastSampleDuration = 0;
-    this.lastDurations = [];
-    // this.timescale = 90000;
+    
     this.tsAlign = Math.round(this.timescale / 60);
     this.mp4track = {
       id: BaseRemuxer.getTrackID(),
@@ -29,7 +28,8 @@ export class H265Remuxer extends BaseRemuxer {
       width: 0,
       height: 0,
       timescale: timescale,
-      duration: timescale,
+      duration: 0,
+      segmentDuration: 0,
       samples: [] /** mp4 samples */,
     };
     this.samples = [];
@@ -180,7 +180,7 @@ export class H265Remuxer extends BaseRemuxer {
       payload.set(unit.getData(), offset);
       offset += unit.getSize();
       samples.push(mp4Sample);
-      this.mp4track.duration += mp4Sample.duration;
+      
       if (lastDTS === undefined) {
         this.firstDTS = dts;
         this.firstPTS = pts;
@@ -189,20 +189,6 @@ export class H265Remuxer extends BaseRemuxer {
       lastDTS = dts;
     }
 
-    if (!samples.length) return null;
-    /** Average duration for samples */
-    let avgDuration =
-      (this.lastDurations.reduce(function (a, b) {
-        return (a | 0) + (b | 0);
-      }, 0) /
-        (this.lastDurations.length || 1)) |
-      0;
-    if (samples.length >= 2) {
-      this.lastSampleDuration = avgDuration;
-      mp4Sample.duration = avgDuration;
-    } else {
-      mp4Sample.duration = this.lastSampleDuration;
-    }
     if (!samples.length) return null;
     return payload;
   }

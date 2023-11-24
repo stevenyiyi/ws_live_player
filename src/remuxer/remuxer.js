@@ -84,6 +84,7 @@ export class Remuxer {
       this.tracks[track.type] = new Remuxer.TrackConverters[track.type](
         Remuxer.TrackTimescale[track.type],
         Remuxer.TrackScaleFactor[track.type],
+        this.client.cacheSize,
         track.params,
       );
       if (track.offset) {
@@ -200,6 +201,22 @@ export class Remuxer {
     }
   }
 
+  initMoov() {
+    if (Object.keys(this.tracks).length) {
+      for (let track_type in this.tracks) {
+        if (
+          !this.tracks[track_type].readyToDecode ||
+          !this.tracks[track_type].samples.length
+        )
+          return;
+        Log.debug(
+          `Init MSE for track ${this.tracks[track_type].mp4track.type}`,
+        );
+      }
+      this.eventSource.dispatchEvent("ready");
+    }
+  }
+
   flush() {
     this.onSamples();
 
@@ -223,7 +240,6 @@ export class Remuxer {
         let track = this.tracks[track_type];
         let pay = track.getPayload();
         if (pay && pay.byteLength) {
-          
           let moof = MP4.moof(track.seq, track.scaled(track.firstDTS), track.mp4track);
           let mdat = MP4.mdat(pay);
           let referenceSize = moof.byteLength + mdat.byteLength;
@@ -240,26 +256,38 @@ export class Remuxer {
 
   onSamples(ev) {
     // TODO: check format
-    // let data = ev.detail;
-    // if (this.tracks[data.pay] && this.client.sampleQueues[data.pay].length) {
-    // console.log(`video ${data.units[0].dts}`);
-    for (let qidx in this.client.sampleQueues) {
-      let queue = this.client.sampleQueues[qidx];
-      while (queue.length) {
-        let accessunit = queue.shift();
-        if (this.tracks[qidx]) {
-          if (accessunit.discontinuity) {
-            Log.debug(`discontinuity, dts:${accessunit.dts}`);
-            this.MSE.abort(qidx);
-            this.tracks[qidx].insertDscontinuity();
-          }
-          for (const unit of accessunit.units) {
-            this.tracks[qidx].remux(unit);
-          }
-        }
+    let accessunit = ev.detail;
+    let type = accessunit.ctype;
+    let track = this.tracks[type];
+    if(track) {
+      if (!this.initialized) {
+        this.initMoov();
+      }
+      if (accessunit.discontinuity) {
+        Log.debug(`discontinuity, dts:${accessunit.dts}, unit dts:${accessunit.units[0].dts}`);
+        this.MSE.abort(type);
+        track.insertDscontinuity(accessunit.units[0].dts);
+      }
+      for (const unit of accessunit.units) {
+        track.remux(unit);
+      }
+      if(this.initialized && track.checkDrainSamples()) {
+        /// Draining sample to MSE
+        let pay = track.getPayload();
+        if (pay && pay.byteLength) {
+          let moof = MP4.moof(track.seq, track.scaled(track.firstDTS), track.mp4track);
+          let mdat = MP4.mdat(pay);
+          let referenceSize = moof.byteLength + mdat.byteLength;
+          this.mse.feed(type, [
+            MP4.sidx(track.firstPTS, track.mp4track, referenceSize),
+            moof,
+            mdat,
+          ]);
+          track.flush();
       }
     }
   }
+}
 
   onAudioConfig(ev) {
     if (this.tracks[ev.detail.pay]) {
@@ -271,8 +299,7 @@ export class Remuxer {
     this.detachClient();
     this.client = client;
     this.clientEventSource = new EventSourceWrapper(this.client.eventSource);
-    this.clientEventSource.on("samples", this.samplesListener);
-    this.clientEventSource.on("audio_config", this.audioConfigListener);
+    this.clientEventSource.on("samples", this.onSamples.bind(this));
     this.clientEventSource.on("tracks", this.onTracks.bind(this));
     this.clientEventSource.on("flush", this.flush.bind(this));
     this.clientEventSource.on("clear", () => {

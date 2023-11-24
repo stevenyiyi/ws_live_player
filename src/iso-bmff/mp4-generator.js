@@ -398,10 +398,10 @@ export class MP4 {
         (referenced_size >> 16) & 0xff,
         (referenced_size >> 8) & 0xff,
         referenced_size & 0xff,  /// referenced_size
-        (track.duration >> 24) & 0xff,
-        (track.duration >> 16) & 0xff,
-        (track.duration >> 8) & 0xff,
-        track.duration & 0xff,  /// subsegment_duration
+        (track.segmentDuration >> 24) & 0xff,
+        (track.segmentDuration >> 16) & 0xff,
+        (track.segmentDuration >> 8) & 0xff,
+        track.segmentDuration & 0xff,  /// subsegment_duration
         startWithSAP ? 0x80 : 0x00, /// startsWithSAP
         0x00,
         0x00,
@@ -1283,6 +1283,7 @@ export class MP4 {
     if (!MP4.types) {
       MP4.init(hasavc);
     }
+    console.log(`initSegment, duration:${duration},timescale:${timescale},mp4track duration:${tracks[0].duration},mp4track timescale:${tracks[0].timescale}`);
     var movie = MP4.moov(tracks, duration, timescale),
       result;
     result = new Uint8Array(MP4.FTYP.byteLength + movie.byteLength);

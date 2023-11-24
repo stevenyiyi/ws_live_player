@@ -2,7 +2,7 @@ import { EventEmitter } from "./utils/event.js";
 export default class BaseStream {
   constructor(options) {
     this.eventSource = new EventEmitter();
-    this.cacheSize = options.cacheSize || 500; // default ms
+    this.cacheSize = options.cacheSize || 200; // default ms
     this.flushInterval = options.flush || 100; // default ms
     this.wsurl = options.wsurl;
     this.rtspurl = options.rtspurl;

@@ -30,7 +30,6 @@ export class TSParser {
     this.pesAsms = {};
     this.ontracks = null;
     this.toSkip = 0;
-    this.discontinuitys = new Map();
   }
 
   reset() {
@@ -57,18 +56,17 @@ export class TSParser {
       let adaptation_field_control = bits.readBits(2);
       /// Ignore continuity_counter (4)
       bits.skipBits(4);
-
+      let discontinuity_indicator = 0;
       if (adaptation_field_control === 3) {
         /// Parse Adaptation_field
         /// adaptation_field_length(8)
         let adaptSize = bits.readBits(8);
         if (adaptSize > 0 && payStart && pid > 0) {
           /// Parse discontinuity_indicator
-          let discontinuity_indicator = bits.readBits(1);
+          discontinuity_indicator = bits.readBits(1);
           if (discontinuity_indicator > 0) {
             Log.debug(`pid:${pid} discontinuity:${discontinuity_indicator}`);
           }
-          this.discontinuitys.set(pid, discontinuity_indicator ? true : false);
           /// No parse
           this.toSkip = bits.skipBits(adaptSize * 8 - 1);
         } else {
@@ -78,9 +76,7 @@ export class TSParser {
         if (bits.finished()) {
           return null;
         }
-      } else if (adaptation_field_control === 1) {
-        this.discontinuitys.set(pid, false);
-      }
+      } 
 
       if (adaptation_field_control === 0 || adaptation_field_control === 2) {
         /// No pes
@@ -92,22 +88,10 @@ export class TSParser {
       let payload = packet.subarray(bits.bytepos); //bitSlice(packet, bits.bitpos+bits.bytepos*8);
 
       if (this.pmtParsed && this.pesParsers.has(pid)) {
-        let pes = this.pesAsms[pid].feed(payload, payStart);
+        let pes = this.pesAsms[pid].feed(payload, payStart, discontinuity_indicator);
         if (pes) {
           /// Log.debug(`pes buffer size:${pes.data.byteLength},pts:${pes.pts}`);
-          let accessuint = this.pesParsers.get(pid).parse(pes);
-          if (accessuint) {
-            let discontinuity = this.discontinuitys.get(pid);
-            if (discontinuity) {
-              Log.debug(
-                `pes pid:${pid} accessunit length:${accessuint.byteLength},discontinuity is true!`
-              );
-              accessuint.discontinuity = true;
-            } else {
-              accessuint.discontinuity = false;
-            }
-          }
-          return accessuint;
+          return this.pesParsers.get(pid).parse(pes);
         }
       } else {
         if (pid === 0) {

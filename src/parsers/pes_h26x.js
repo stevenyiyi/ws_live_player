@@ -92,11 +92,13 @@ export class H26XPES {
       }
     }
     this.lastUnit = units[units.length - 1];
-    return new MediaAccessunit(
+    let accessunit = new MediaAccessunit(
       this.pesType === 0x1b ? PayloadType.H264 : PayloadType.H265,
       pes.dts,
       pes.dts,
       units
     );
+    accessunit.discontinuity = pes.discontinuity;
+    return accessunit;
   }
 }

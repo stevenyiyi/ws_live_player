@@ -5,8 +5,8 @@ import { BaseRemuxer } from "./base-remuxer.js";
 const Log = getTagged("remuxer:aac");
 // TODO: asm.js
 export class AACRemuxer extends BaseRemuxer {
-  constructor(timescale, scaleFactor = 1, params = {}) {
-    super(timescale, scaleFactor);
+  constructor(timescale, scaleFactor = 1, drainDuration, params = {}) {
+    super(timescale, scaleFactor, drainDuration);
 
     this.codecstring = MSE.CODEC_AAC;
     this.units = [];
@@ -25,7 +25,8 @@ export class AACRemuxer extends BaseRemuxer {
       channelCount: 0,
       audiosamplerate: 0,
       duration: 0,
-      timescale: this.timescale,
+      segmentDuration: 0,
+      timescale: timescale,
       volume: 1,
       samples: [],
       config: "",
@@ -80,7 +81,7 @@ export class AACRemuxer extends BaseRemuxer {
       payload.set(unit.getData(), offset);
       offset += unit.getSize();
       samples.push(mp4Sample);
-      this.mp4track.duration += mp4Sample.duration;
+     
       if (lastDTS === undefined) {
         this.firstDTS = dts;
         this.firstPTS = pts;

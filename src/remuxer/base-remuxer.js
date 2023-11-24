@@ -34,7 +34,7 @@ export class BaseRemuxer {
     return track_id++;
   }
 
-  constructor(timescale, scaleFactor, params) {
+  constructor(timescale, scaleFactor, drainDuration) {
     this.timeOffset = 0;
     this.timescale = timescale;
     this.scaleFactor = scaleFactor;
@@ -42,7 +42,12 @@ export class BaseRemuxer {
     this.samples = [];
     this.seq = 1;
     this.tsAlign = 1;
+    this.duration = 0;
+    this.defaultSampleDuration = 0;
     this.pendingUnit = null;
+    this.onSegment = null;
+    this.drainDuration = drainDuration; /// ms
+    Log.debug(`Draining duration:${drainDuration}`);
   }
 
   scaled(timestamp) {
@@ -51,6 +56,10 @@ export class BaseRemuxer {
 
   unscaled(timestamp) {
     return timestamp * this.scaleFactor;
+  }
+
+  checkDrainSamples() {
+    return BaseRemuxer.toMS(this.mp4track.segmentDuration)  >= this.drainDuration ? true : false;
   }
 
   remux(unit) {
@@ -68,6 +77,15 @@ export class BaseRemuxer {
           cts: this.pendingUnit.pts - this.pendingUnit.dts,
         });
         len = this.pendingUnit.getSize();
+   
+        if(!this.defaultSampleDuration) {
+          this.defaultSampleDuration = BaseRemuxer.toMS(dur);
+          Log.debug(`default sample duration:${this.defaultSampleDuration}`);
+        }
+        if(this.mp4track.sps && dur >= 90000) {
+          Log.warn(`Invalid h264 sample duration:${BaseRemuxer.toMS(dur)},previous dts:${this.pendingUnit.dts},current dts:${unit.dts}`);
+        }
+        this.mp4track.segmentDuration += dur;
         this.pendingUnit = unit;
       }
       return len;
@@ -76,16 +94,19 @@ export class BaseRemuxer {
   }
 
   static toMS(timestamp) {
-    return timestamp / 90;
+    return timestamp * 1000 / BaseRemuxer.MP4_TIMESCALE;
   }
 
   setConfig(config) {}
 
-  insertDscontinuity() {
+  insertDscontinuity(dts) {
     this.pendingUnit = null;
     this.samples = [];
     this.mp4track.len = 0;
+    this.mp4track.segmentDuration = 0;
+   /// this.mp4track.seq = dts / (this.drainDuration * 90);
     Log.debug("insertDscontinuity");
+
   }
 
   init(initPTS, initDTS, shouldInitialize = true) {
@@ -106,7 +127,7 @@ export class BaseRemuxer {
     }
     if (duration > 0) {
       /** Convert to ms */
-      duration = (duration * 1000) / BaseRemuxer.MP4_TIMESCALE;
+      duration = BaseRemuxer.toMS(duration);
     }
     return duration;
   }
@@ -114,7 +135,7 @@ export class BaseRemuxer {
   flush() {
     this.seq++;
     this.mp4track.len = 0;
-    this.mp4track.duration = 0;
+    this.mp4track.segmentDuration = 0;
     this.mp4track.samples = [];
   }
 

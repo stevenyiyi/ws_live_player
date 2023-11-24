@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "dev": "parcel ./index.html",
     "start": "parcel ./index.html",
     "build": "parcel build ./index.html",
     "lint": "eslint src"
@@ -12,8 +13,9 @@
   },
   "devDependencies": {
     "@babel/core": "latest",
-    "typescript": "latest",
-    "eslint": "latest"
+    "eslint": "latest",
+    "parcel-bundler": "^1.12.5",
+    "typescript": "latest"
   },
   "resolutions": {
     "@babel/preset-env": "latest"

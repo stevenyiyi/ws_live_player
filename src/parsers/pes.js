@@ -21,7 +21,7 @@ export class PESAsm {
 
   /// Parse PES header
   parseHeader() {
-    let hdr = this.fragments[0];
+    let hdr = this.fragments[0].data;
     /// packet_start_code_prefix(24)
     let pesPrefix = (hdr[0] << 16) + (hdr[1] << 8) + hdr[2];
     /// stream_id (8)
@@ -69,7 +69,7 @@ export class PESAsm {
     let pesFlags, pesHdrLen, pesPts, pesDts, payloadStartOffset;
 
     pesFlags = frag[1];
-    if (pesFlags & 0xc0) {
+    if (pesFlags & 0x80) {
       /* PES header described here : http://dvd.sourceforge.net/dvdinfo/pes-hdr.html
                  as PTS / DTS is 33 bit we cannot use bitwise operator in JS,
                  as Bitwise operators treat their operands as a sequence of 32 bits */
@@ -80,10 +80,10 @@ export class PESAsm {
         (frag[6] & 0xff) * 128 + // 1 << 7
         (frag[7] & 0xfe) / 2;
       // check if greater than 2^32 -1
-      if (pesPts > 4294967295) {
+     /** if (pesPts > 4294967295) {
         // decrement 2^33
         pesPts -= 8589934592;
-      }
+      } */
       if (pesFlags & 0x40) {
         pesDts =
           (frag[8] & 0x0e) * 536870912 + // 1 << 29
@@ -92,10 +92,10 @@ export class PESAsm {
           (frag[11] & 0xff) * 128 + // 1 << 7
           (frag[12] & 0xfe) / 2;
         // check if greater than 2^32 -1
-        if (pesDts > 4294967295) {
+        /*if (pesDts > 4294967295) {
           // decrement 2^33
           pesDts -= 8589934592;
-        }
+        } */
       } else {
         pesDts = pesPts;
       }
@@ -110,7 +110,7 @@ export class PESAsm {
     }
   }
 
-  feed(frag, shouldParse) {
+  feed(frag, shouldParse, discontinuity_indicator) {
     let res = null;
     if (shouldParse && this.fragments.length) {
       if (!this.parseHeader()) {
@@ -119,9 +119,10 @@ export class PESAsm {
 
       let offset = 6;
       let parsed = {};
+      let discontinuity = this.fragments[0].discontinuity;
       if (this.extPresent) {
         // TODO: make sure fragment have necessary length
-        parsed = this.parseExtension(this.fragments[0].subarray(6));
+        parsed = this.parseExtension(this.fragments[0].data.subarray(6));
         offset = parsed.offset;
       }
 
@@ -131,25 +132,26 @@ export class PESAsm {
 
       let poffset = 0;
       while (this.pesLength && this.fragments.length) {
-        let data = this.fragments.shift();
+        let datafrag = this.fragments.shift();
         if (offset) {
-          if (data.byteLength < offset) {
-            offset -= data.byteLength;
+          if (datafrag.data.byteLength < offset) {
+            offset -= datafrag.data.byteLength;
             continue;
           } else {
-            data = data.subarray(offset);
+            datafrag.data = datafrag.data.subarray(offset);
             this.pesLength -= offset - (this.hasLength ? 6 : 0);
             offset = 0;
           }
         }
-        this.pesPkt.set(data, poffset);
-        poffset += data.byteLength;
-        this.pesLength -= data.byteLength;
+        this.pesPkt.set(datafrag.data, poffset);
+        poffset += datafrag.data.byteLength;
+        this.pesLength -= datafrag.data.byteLength;
       }
       res = {
         data: this.pesPkt.subarray(0, poffset),
         pts: parsed.pts,
-        dts: parsed.dts
+        dts: parsed.dts,
+        discontinuity: discontinuity
       };
       /** Log.debug(
         `pid:${this.pid},This PES length:${this.pesLength}, length:${poffset}`
@@ -164,15 +166,15 @@ export class PESAsm {
 
     if (
       this.fragments.length &&
-      this.fragments[this.fragments.length - 1].byteLength < 6
+      this.fragments[this.fragments.length - 1].data.byteLength < 6
     ) {
       /** Merge small buffer to a whole buffer */
-      this.fragments[this.fragments.length - 1] = appendByteArray(
-        this.fragments[this.fragments.length - 1],
+      this.fragments[this.fragments.length - 1].data = appendByteArray(
+        this.fragments[this.fragments.length - 1].data,
         frag
       );
     } else {
-      this.fragments.push(frag);
+      this.fragments.push({data: frag, discontinuity: discontinuity_indicator});
     }
 
     return res;

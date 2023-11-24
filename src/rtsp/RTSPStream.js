@@ -148,7 +148,7 @@ export default class RTSPStream extends BaseStream {
 
     if (this.useMSE) {
       this.eventSource.dispatchEvent("tracks", tracks);
-      this.startStreamFlush();
+      /// this.startStreamFlush();
       /// Dispatch avinfo
       this.eventSource.dispatchEvent("info", this._getAVInfo());
     } else {
@@ -278,7 +278,21 @@ export default class RTSPStream extends BaseStream {
         this.tracksReady = true;
       }
     }
-    this.sampleQueues[accessunit.ctype].push(accessunit);
+    if(track.ready) {
+      this.eventSource.dispatchEvent("samples", accessunit);
+    } else {
+      Log.warn("droped no ready sample!");
+    }
+   
+    if(this.tracksReady) {
+      while(this.sampleQueues[accessunit.ctype].length) {
+        let sample = this.sampleQueues[accessunit.ctype].shift();
+        this.eventSource.dispatchEvent("samples", sample);
+      } 
+      this.eventSource.dispatchEvent("samples", accessunit);
+    } else {
+      this.sampleQueues[accessunit.ctype].push(accessunit);
+    }
   }
 
   reset() {

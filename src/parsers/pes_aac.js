@@ -65,6 +65,7 @@ export class AACPES {
         `parsed codec:${this.config.codec},rate:${this.config.samplerate},nb channel:${this.config.channels}`
       );
     }
+    res.discontinuity = pes.discontinuity;
     frameIndex = 0;
     frameDuration = (1024 * 90000) / this.config.samplerate;
 
