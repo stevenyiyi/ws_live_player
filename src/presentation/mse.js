@@ -460,6 +460,7 @@ export class MSE {
   }
 
   abort(track) {
-    this.buffers[track].abort();
+    if(!this.buffers[track].updating)
+     this.buffers[track].abort();
   }
 }
