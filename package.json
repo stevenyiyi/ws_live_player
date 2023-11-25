@@ -13,7 +13,6 @@
   "devDependencies": {
     "@babel/core": "latest",
     "eslint": "latest",
-    "parcel-bundler": "^1.12.5",
     "typescript": "latest"
   },
   "resolutions": {

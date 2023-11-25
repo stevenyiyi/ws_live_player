@@ -28,6 +28,8 @@ export class H264Remuxer extends BaseRemuxer {
       timescale: timescale,
       duration: 0,
       segmentDuration: 0,
+      defaultSampleDuration: 0,
+      defaultSampleSize: 0,
       samples: [],
     };
     this.samples = [];

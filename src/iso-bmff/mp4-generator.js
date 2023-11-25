@@ -1,9 +1,48 @@
 /**
  * Generate MP4 Box
- * got from: https://github.com/dailymotion/hls.js
  */
 
 export class MP4 {
+  static get MOV_TFHD_FLAG_BASE_DATA_OFFSET() {
+    return 0x00000001;
+  }
+  static get MOV_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX() {
+    return 0x00000002;
+  }
+  static get MOV_TFHD_FLAG_DEFAULT_DURATION() {
+    return 0x00000008;
+  }
+  static get MOV_TFHD_FLAG_DEFAULT_SIZE() {
+    return 0x00000010;
+  }
+  static get MOV_TFHD_FLAG_DEFAULT_FLAGS() {
+    return 0x00000020;
+  }
+  static get MOV_TFHD_FLAG_DURATION_IS_EMPTY() {
+    return 0x00010000;
+  }
+  static get MOV_TFHD_FLAG_DEFAULT_BASE_IS_MOOF() {
+    return 0x00020000;
+  }
+  static get MOV_FRAG_SAMPLE_FLAG_IS_NON_SYNC() {
+    return 0x00010000;
+  }
+  static get MOV_FRAG_SAMPLE_FLAG_DEPENDS_NO() {
+    return 0x02000000;
+  }
+  static get MOV_FRAG_SAMPLE_FLAG_DEPENDS_YES() {
+    return 0x01000000;
+  }
+  static get MOV_SAMPLE_DEPENDENCY_UNKNOWN() {
+    return 0x00000000;
+  }
+  static get MOV_SAMPLE_DEPENDENCY_YES() {
+    return 0x00000001;
+  }
+  static get MOV_SAMPLE_DEPENDENCY_NO() {
+    return 0x00000002;
+  }
+
   static init(hasavc = true, hashvc = false) {
     MP4.types = {
       avc1: [], // codingname
@@ -21,13 +60,13 @@ export class MP4 {
       mdia: [],
       mfhd: [],
       minf: [],
-      sidx: [],
       moof: [],
       moov: [],
       mp4a: [],
       mvex: [],
       mvhd: [],
       sdtp: [],
+      sidx: [],
       stbl: [],
       stco: [],
       stsc: [],
@@ -1126,6 +1165,43 @@ export class MP4 {
         0x00 // height
       ])
     );
+  }
+
+  static getSampleFlags(track, i) {
+    let flags = 0;
+    if(track.samples[i].flags.isNonSync === 0) {
+        flags = MP4.MOV_FRAG_SAMPLE_FLAG_DEPENDS_NO;
+    } else {
+        flags = MP4.MOV_FRAG_SAMPLE_FLAG_DEPENDS_YES | MP4.MOV_FRAG_SAMPLE_FLAG_IS_NON_SYNC;
+    }
+    return flags;
+  }
+  static tfhd(track) {
+    let id = track.id;
+    let flags = MP4.MOV_TFHD_FLAG_DEFAULT_FLAGS | MP4.MOV_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX | MP4.MOV_TFHD_FLAG_DEFAULT_BASE_IS_MOOF;
+    if(track.samples.length > 0) {
+      flags |= MP4.MOV_TFHD_FLAG_DEFAULT_DURATION;
+      flags |= MP4.MOV_TFHD_FLAG_DEFAULT_SIZE;
+      track.defaultSampleDuration = track.samples[0].duration;
+      track.defaultSampleSize = track.samples[0].size;
+    } else {
+      flags |= MP4.MOV_TFHD_FLAG_DURATION_IS_EMPTY;
+    }
+
+    return new Uint8Array([
+      (flags >> 24) & 0xff,
+      (flags >> 16) & 0xff,
+      (flags >> 8) & 0xff,
+      flags & 0xff,    /// flags
+      (id >> 24) & 0xff,
+      (id >> 16) & 0xff,
+      (id >> 8) & 0xff,
+      id & 0xff, // track_ID
+      0x00,
+      0x00,
+      0x00,
+      0x01,  ///sample_description_index, CMAF must
+    ]);
   }
 
   static traf(track, baseMediaDecodeTime) {

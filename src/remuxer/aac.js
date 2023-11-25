@@ -31,6 +31,8 @@ export class AACRemuxer extends BaseRemuxer {
       samples: [],
       config: "",
       len: 0,
+      defaultSampleDuration: 0,
+      defaultSampleSize: 0
     };
     if (params.config) {
       this.setConfig(params.config);

@@ -43,7 +43,6 @@ export class BaseRemuxer {
     this.seq = 1;
     this.tsAlign = 1;
     this.duration = 0;
-    this.defaultSampleDuration = 0;
     this.pendingUnit = null;
     this.onSegment = null;
     this.drainDuration = drainDuration; /// ms
@@ -77,11 +76,6 @@ export class BaseRemuxer {
           cts: this.pendingUnit.pts - this.pendingUnit.dts,
         });
         len = this.pendingUnit.getSize();
-   
-        if(!this.defaultSampleDuration) {
-          this.defaultSampleDuration = BaseRemuxer.toMS(dur);
-          Log.debug(`default sample duration:${this.defaultSampleDuration}`);
-        }
         if(this.mp4track.sps && dur >= 90000) {
           Log.warn(`Invalid h264 sample duration:${BaseRemuxer.toMS(dur)},previous dts:${this.pendingUnit.dts},current dts:${unit.dts}`);
         }

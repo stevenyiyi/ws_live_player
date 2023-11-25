@@ -5,24 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch via NPM",
-            "request": "launch",
-            "runtimeArgs": [
-                "run-script",
-                "debug"
-            ],
-            "runtimeExecutable": "npm",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "type": "node"
-        },
-        {
             "type": "chrome",
             "request": "launch",
             "name": "针对 localhost 启动 Chrome",
             "url": "http://localhost:1234",
-            "webRoot": "${workspaceFolder}"
+            "webRoot": "${workspaceFolder}",
+            "breakOnLoad": true,
+            "sourceMapPathOverrides": {
+              "/__parcel_source_root/*": "${webRoot}/*"
+            }
         }
     ]
 }
