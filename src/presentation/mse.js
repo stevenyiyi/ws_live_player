@@ -142,7 +142,7 @@ export class MSEBuffer {
   clear() {
     this.queue = [];
     let promises = [];
-    for (let i = 0; i < this.sourceBuffer.buffered.length; ++i) {
+    for (let i = 0; i < this.sourceBuffer.buffered.length; i++) {
       // TODO: await remove
       this.cleaning = true;
       promises.push(
@@ -156,7 +156,7 @@ export class MSEBuffer {
             resolve();
           } else {
             this.sourceBuffer.onupdateend = () => {
-              if (this.sourceBuffer) {
+              if (this.sourceBuffer && i < this.sourceBuffer.buffered.length) {
                 this.sourceBuffer.remove(
                   this.sourceBuffer.buffered.start(i),
                   this.sourceBuffer.buffered.end(i)

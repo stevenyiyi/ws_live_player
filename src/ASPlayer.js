@@ -1,5 +1,7 @@
+import { getTagged } from "./utils/logger.js";
 import RTSPStream from "./rtsp/RTSPStream";
-
+const LOG_TAG = "RTSPStream";
+const Log = getTagged(LOG_TAG);
 export class ASPlayer {
   constructor(options) {
     // Always call super first in constructor
@@ -70,9 +72,7 @@ export class ASPlayer {
     this._video.addEventListener(
       "abort",
       () => {
-        this.stream.abort().then(() => {
-          this.stream.destroy();
-        });
+        Log.debug("video abort!");
       },
       false
     );
