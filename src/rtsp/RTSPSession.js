@@ -2,7 +2,6 @@ import { getTagged } from "../utils/logger.js";
 
 import { RTSPClientSM as RTSPClient } from "./RTSPClient.js";
 import { Url } from "../utils/url.js";
-import { RTSPError } from "./RTSPClient.js";
 
 const LOG_TAG = "rtsp:session";
 const Log = getTagged(LOG_TAG);
@@ -19,8 +18,8 @@ export class RTSPSession {
     this.client = null;
   }
 
-  start() {
-    return this.sendPlay();
+  start(pos = 0, scale = 1) {
+    return this.sendPlay(pos, scale);
   }
 
   stop() {
@@ -47,10 +46,15 @@ export class RTSPSession {
     return this.client.sendRequest(_cmd, this.getControlURL(), params);
   }
 
-  async sendPlay(pos = 0) {
+  async sendPlay(pos = 0, scale = 1) {
     this.state = RTSPClient.STATE_PLAY;
     let params = {};
-    params["Range"] = `npt=${pos}-`;
+    if(scale !== this.client.scale) {
+      params["Scale"] = scale;
+      this.client.scale = scale;
+    } else {
+      params["Range"] = `npt=${pos}-`;
+    }
 
     let data = await this.sendRequest("PLAY", params);
     this.state = RTSPClient.STATE_PLAYING;

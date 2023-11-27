@@ -53,7 +53,7 @@ export class RTSPClient extends BaseClient {
     await super.destroy();
   }
 
-  start() {
+  start(scale = 1) {
     super.start();
     if (this.transport) {
       if (this.connected) {
@@ -63,7 +63,7 @@ export class RTSPClient extends BaseClient {
           .connect()
           .then(() => {
             this.connected = true;
-            return this.clientSM.start();
+            return this.clientSM.start(scale);
           })
           .catch((e) => {
             this.connected = false;
@@ -76,7 +76,7 @@ export class RTSPClient extends BaseClient {
   }
 
   seek(timeOffset) {
-    return this.clientSM.start(timeOffset);
+    return this.clientSM.seek(timeOffset);
   }
 
   stop() {
@@ -174,6 +174,8 @@ export class RTSPClientSM extends StateMachine {
 
     this.parent = parent;
     this.transport = null;
+    this.scale = 1;
+    this.pos = 0;
     this.payParser = new RTPPayloadParser();
     this.rtp_channels = new Set();
     this.sessions = {};
@@ -256,17 +258,27 @@ export class RTSPClientSM extends StateMachine {
     await this.transitionTo(RTSPClientSM.STATE_INITIAL);
   }
 
-  start(pos) {
+  start(scale) {
     if (this.currentState.name !== RTSPClientSM.STATE_STREAMS) {
       return this.transitionTo(RTSPClientSM.STATE_OPTIONS);
     } else {
       // TODO: seekable
       let promises = [];
       for (let session in this.sessions) {
-        promises.push(this.sessions[session].sendPlay(pos));
+        promises.push(this.sessions[session].sendPlay(this.pos, scale));
       }
       return Promise.all(promises);
     }
+  }
+
+  seek(pos) {
+      // TODO: seekable
+      let promises = [];
+      for (let session in this.sessions) {
+          promises.push(this.sessions[session].sendPlay(pos, this.scale));
+      }
+      this.pos = pos;
+      return Promise.all(promises);
   }
 
   onControl(data) {
@@ -390,8 +402,7 @@ export class RTSPClientSM extends StateMachine {
       _params["Authorization"] = this.authenticator(_cmd);
     }
     return this.send(
-      MessageBuilder.build(_cmd, _host, _params, _payload),
-      _cmd
+      MessageBuilder.build(_cmd, _host, _params, _payload)
     ).catch((e) => {
       if (e instanceof AuthError && !_params["Authorization"]) {
         return this.sendRequest(_cmd, _host, _params, _payload);
@@ -410,6 +421,7 @@ export class RTSPClientSM extends StateMachine {
           Log.log(`send data success,cseq:${this.cSeq}`);
         })
         .catch((e) => {
+          Log.error(e);
           delete this.promises[this.cSeq];
           reject(
             new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
@@ -421,7 +433,7 @@ export class RTSPClientSM extends StateMachine {
     });
   }
 
-  async send(_data, _method) {
+  async send(_data) {
     if (this.transport) {
       try {
         await this.transport.ready;
@@ -646,7 +658,7 @@ export class RTSPClientSM extends StateMachine {
     return Promise.all(streams).then((tracks) => {
       let sessionPromises = [];
       for (let session in this.sessions) {
-        sessionPromises.push(this.sessions[session].start());
+        sessionPromises.push(this.sessions[session].start(this.pos, this.scale));
       }
       return Promise.all(sessionPromises).then(() => {
         this.parent.emit("tracks", tracks);

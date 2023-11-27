@@ -16,13 +16,15 @@ export class MSEBuffer {
     this.cleanRanges = [];
     this.updatesToCleanup = 0;
     this.firstMoveToBufferStart = true;
+    this.aborting = false;
 
     Log.debug(`Use codec: ${codec}`);
 
     this.sourceBuffer = this.mediaSource.addSourceBuffer(codec);
+    Log.debug(`Source buffer mode:${this.sourceBuffer.mode}`);
     this.eventSource = new EventEmitter(this.sourceBuffer);
 
-    this.eventSource.addEventListener("updatestart", (e) => {
+    this.eventSource.addEventListener("updatestart", (_) => {
       // this.updating = true;
       // Log.debug('update start');
       if (this.cleaning) {
@@ -30,16 +32,14 @@ export class MSEBuffer {
       }
     });
 
-    this.eventSource.addEventListener("update", (e) => {
-      // this.updating = true;
+    this.eventSource.addEventListener("update", (_) => {
       if (this.cleaning) {
         Log.debug(`${this.codec} cleaning update`);
       }
     });
 
-    this.eventSource.addEventListener("updateend", (e) => {
+    this.eventSource.addEventListener("updateend", (_) => {
       // Log.debug('update end');
-      // this.updating = false;
       if (this.cleaning) {
         Log.debug(`${this.codec} cleaning end`);
         try {
@@ -52,10 +52,12 @@ export class MSEBuffer {
         } catch (e) {
           // TODO: do something?
         }
+
         while (this.cleanResolvers.length) {
           let resolver = this.cleanResolvers.shift();
           resolver();
         }
+
         this.cleaning = false;
 
         if (this.cleanRanges.length) {
@@ -72,6 +74,12 @@ export class MSEBuffer {
       if (this.updatesToCleanup > 100) {
         this.cleanupBuffer();
         this.updatesToCleanup = 0;
+      }
+
+      if (this.aborting) {
+        Log.debug(`${this.codec} aborting`);
+        this.sourceBuffer.abort();
+        this.aborting = false;
       }
 
       this.feedNext();
@@ -124,9 +132,9 @@ export class MSEBuffer {
     }
   }
 
-  destroy() {
+  async destroy() {
     this.eventSource.destroy();
-    this.clear();
+    await this.clear();
     this.queue = [];
     this.mediaSource.removeSourceBuffer(this.sourceBuffer);
   }
@@ -236,7 +244,9 @@ export class MSEBuffer {
           video.stop();
         });
         this.mediaSource.endOfStream();
-      } catch (e) {}
+      } catch (e) {
+        Log.error("Can't stop video!");
+      }
       this.parent.eventSource.dispatchEvent("error");
     } else {
       try {
@@ -273,10 +283,6 @@ export class MSEBuffer {
       this.feedNext();
     }
   }
-
-  abort() {
-    this.sourceBuffer.abort();
-  }
 }
 
 export class MSE {
@@ -293,7 +299,7 @@ export class MSE {
       [MediaError.MEDIA_ERR_ABORTED]: "fetching process aborted by user",
       [MediaError.MEDIA_ERR_NETWORK]: "error occurred when downloading",
       [MediaError.MEDIA_ERR_DECODE]: "error occurred when decoding",
-      [MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED]: "audio/video not supported"
+      [MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED]: "audio/video not supported",
     };
   }
 
@@ -427,10 +433,10 @@ export class MSE {
     return this.mediaReady;
   }
 
-  reset() {
+  async reset() {
     this.ready = false;
     for (let track in this.buffers) {
-      this.buffers[track].destroy();
+      await this.buffers[track].destroy();
       delete this.buffers[track];
     }
     if (this.mediaSource.readyState == "open") {
@@ -440,10 +446,6 @@ export class MSE {
     this.updating = false;
     this.resolved = false;
     this.buffers = {};
-    // this.players.forEach((video)=>{video.src = URL.createObjectURL(this.mediaSource)});
-    // TODO: remove event listeners for existing media source
-    // this.setupEvents();
-    // this.clear();
   }
 
   setCodec(track, mimeCodec) {
@@ -460,7 +462,6 @@ export class MSE {
   }
 
   abort(track) {
-    if(!this.buffers[track].updating)
-     this.buffers[track].abort();
+    this.buffers[track].aborting = true;
   }
 }

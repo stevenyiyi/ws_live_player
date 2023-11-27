@@ -4,8 +4,6 @@ document.getElementById("app").innerHTML = `
 <h1>rtsp player</h1>
 <div class="video__container">
 <video id="test_video" controls autoplay>
-    <!--<source src="rtsp://192.168.10.205:554/ch01.264" type="application/x-rtsp">-->
-    <!--<source src="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov" type="application/x-rtsp">-->
 </video>
 </div>
 `;
@@ -18,6 +16,7 @@ let player = new ASPlayer({
   video: video,
   bufferedDuration: 120,
   reconnect: true,
+  scale: 1  /** 倍速播放，取值为0.25 、0.5 、1 、2 、4 */
 });
 /** Error handling */
 player.errorHandler = (e) => {

@@ -49,12 +49,12 @@ export default class RTSPStream extends BaseStream {
   /// Public methods
 
   /// Override method, return Promise
-  load() {
+  load(scale = 1) {
     Log.log("load starting!");
     this.client.reset();
     this.client.setSource(this.rtspurl);
     this.buffering = true;
-    return this.client.start();
+    return this.client.start(scale);
   }
 
   /// return Promise
@@ -319,6 +319,7 @@ export default class RTSPStream extends BaseStream {
     /** Destory remux */
     if (this.remux) {
       this.remux.destroy();
+      this.remux = null;
     }
     this.eventSource.dispatchEvent(
       "error",

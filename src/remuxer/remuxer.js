@@ -68,7 +68,7 @@ export class Remuxer {
   }
 
   destroy() {
-    this.mseEventSource.destroy();
+    /// this.mseEventSource.destroy();
     this.mse.destroy();
     this.mse = null;
 
@@ -266,7 +266,7 @@ export class Remuxer {
       if (accessunit.discontinuity) {
         Log.debug(`discontinuity, dts:${accessunit.dts}, unit dts:${accessunit.units[0].dts}`);
         this.MSE.abort(type);
-        track.insertDscontinuity(accessunit.units[0].dts);
+        track.insertDscontinuity();
       }
       for (const unit of accessunit.units) {
         track.remux(unit);

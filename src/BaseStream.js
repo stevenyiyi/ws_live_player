@@ -41,7 +41,7 @@ export default class BaseStream {
   /// Public methods
 
   /// return Promise
-  load() {
+  load(scale) {
     /// Inherite class implement
     throw Error("Call load in abstract class!");
   }

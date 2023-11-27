@@ -13,6 +13,7 @@
   "devDependencies": {
     "@babel/core": "latest",
     "eslint": "latest",
+    "eslint-plugin-react": "^7.33.2",
     "typescript": "latest"
   },
   "resolutions": {

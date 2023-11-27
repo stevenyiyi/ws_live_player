@@ -10,7 +10,6 @@
             "name": "针对 localhost 启动 Chrome",
             "url": "http://localhost:1234",
             "webRoot": "${workspaceFolder}",
-            "breakOnLoad": true,
             "sourceMapPathOverrides": {
               "/__parcel_source_root/*": "${webRoot}/*"
             }

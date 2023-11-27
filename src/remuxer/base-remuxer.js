@@ -91,14 +91,11 @@ export class BaseRemuxer {
     return timestamp * 1000 / BaseRemuxer.MP4_TIMESCALE;
   }
 
-  setConfig(config) {}
-
-  insertDscontinuity(dts) {
+  insertDscontinuity() {
     this.pendingUnit = null;
-    this.samples = [];
-    this.mp4track.len = 0;
-    this.mp4track.segmentDuration = 0;
-   /// this.mp4track.seq = dts / (this.drainDuration * 90);
+  //  this.samples = [];
+  //  this.mp4track.len = 0;
+  //  this.mp4track.segmentDuration = 0;
     Log.debug("insertDscontinuity");
 
   }
@@ -147,7 +144,7 @@ export class BaseRemuxer {
     return groupBy(gop, "dts");
   }
 
-  getPayloadBase(sampleFunction, setupSample) {
+  getPayloadBase() {
     if (!this.readyToDecode || !this.initialized || !this.samples.length)
       return null;
     this.samples.sort(BaseRemuxer.dtsSortFunc);
