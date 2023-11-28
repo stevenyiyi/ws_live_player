@@ -16,6 +16,7 @@ export class MSEBuffer {
     this.cleanRanges = [];
     this.updatesToCleanup = 0;
     this.firstMoveToBufferStart = true;
+    this.seekMoveToBuffer = false;
     this.aborting = false;
 
     Log.debug(`Use codec: ${codec}`);
@@ -257,6 +258,30 @@ export class MSEBuffer {
             this.players[0].start();
           }
           this.firstMoveToBufferStart = false;
+        } else if(this.seekMoveToBuffer && this.sourceBuffer.buffered.length) {
+          let bufferedLen = this.sourceBuffer.buffered.length;
+          let currentPlayTime = this.players[0].currentTime;
+          for(let i = 0; i < bufferedLen; i++) {
+            if(currentPlayTime >= this.sourceBuffer.buffered.start(i) && currentPlayTime <= this.sourceBuffer.buffered.end(i)) {
+              this.seekMoveToBuffer = false;
+              break;
+            }
+          }
+          if(this.seekMoveToBuffer) {
+            let j = 0;
+            while(j < bufferedLen) {
+              let prevtr = this.sourceBuffer.buffered.end(j);
+              ++j;
+              if(j >= bufferedLen) {
+                break;
+              }
+              if(currentPlayTime > prevtr && currentPlayTime < this.sourceBuffer.buffered.start(j)) {
+                this.players[0].currentTime = this.sourceBuffer.buffered.start(j);
+                this.seekMoveToBuffer = false;
+                break;
+              }
+            }
+          }
         }
       } catch (e) {
         if (e.name === "QuotaExceededError") {
@@ -469,5 +494,6 @@ export class MSE {
 
   abort(track) {
     this.buffers[track].aborting = true;
+    this.buffers[track].seekMoveToBuffer = true;
   }
 }
