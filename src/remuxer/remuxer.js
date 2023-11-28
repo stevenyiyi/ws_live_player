@@ -81,7 +81,9 @@ export class Remuxer {
     Log.debug(`ontracks: `, tracks.detail);
     // store available track types
     let scale = this.client.getScale();
-    Log.debug(`Scale:${scale}, video playbackRate:${this.client.video.playbackRate}`);
+    Log.debug(
+      `Scale:${scale}, video playbackRate:${this.client.video.playbackRate}`
+    );
     this.MSE.setScale(scale);
     tracks.detail.forEach((track) => {
       if (track.useMSE) {
@@ -223,8 +225,7 @@ export class Remuxer {
   }
 
   flush() {
-    this.onSamples();
-
+    this.feedSamples();
     if (!this.initialized) {
       // Log.debug(`Initialize...`);
       if (Object.keys(this.tracks).length) {
@@ -253,7 +254,7 @@ export class Remuxer {
           let mdat = MP4.mdat(pay);
           let referenceSize = moof.byteLength + mdat.byteLength;
           this.mse.feed(track_type, [
-            MP4.sidx(track.firstPTS, track.mp4track, referenceSize),
+            MP4.sidx(track.scaled(track.firstPTS), track.mp4track, referenceSize),
             moof,
             mdat,
           ]);
@@ -263,7 +264,30 @@ export class Remuxer {
     }
   }
 
-  onSamples(ev) {
+  feedSamples() {
+    for (let qidx in this.client.sampleQueues) {
+      let queue = this.client.sampleQueues[qidx];
+      while (queue.length) {
+        let accessunit = queue.shift();
+        if (accessunit) {
+          if (accessunit.discontinuity) {
+            Log.debug(
+              `discontinuity, dts:${accessunit.dts}, unit dts:${accessunit.units[0].dts}`
+            );
+            this.MSE.abort(qidx);
+            this.tracks[qidx].insertDscontinuity();
+          }
+          for (let unit of accessunit.units) {
+            if (this.tracks[qidx]) {
+              this.tracks[qidx].remux(unit);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  onSample(ev) {
     // TODO: check format
     let accessunit = ev.detail;
     let type = accessunit.ctype;
@@ -294,7 +318,7 @@ export class Remuxer {
           let mdat = MP4.mdat(pay);
           let referenceSize = moof.byteLength + mdat.byteLength;
           this.mse.feed(type, [
-            MP4.sidx(track.firstPTS, track.mp4track, referenceSize),
+            MP4.sidx(track.scaled(track.firstPTS), track.mp4track, referenceSize),
             moof,
             mdat,
           ]);
@@ -314,7 +338,7 @@ export class Remuxer {
     this.detachClient();
     this.client = client;
     this.clientEventSource = new EventSourceWrapper(this.client.eventSource);
-    this.clientEventSource.on("samples", this.onSamples.bind(this));
+    this.clientEventSource.on("samples", this.onSample.bind(this));
     this.clientEventSource.on("tracks", this.onTracks.bind(this));
     this.clientEventSource.on("flush", this.flush.bind(this));
     this.clientEventSource.on("clear", () => {
