@@ -3,7 +3,7 @@ export default class BaseStream {
   constructor(options) {
     this.eventSource = new EventEmitter();
     this.cacheSize = options.cacheSize || 200; // default ms
-    this.flushInterval = options.flush || 100; // default ms
+    this.flushInterval = options.flush || 200; // default ms
     this.wsurl = options.wsurl;
     this.rtspurl = options.rtspurl;
     this.video = options.video;

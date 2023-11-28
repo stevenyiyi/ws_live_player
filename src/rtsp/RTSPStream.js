@@ -156,7 +156,7 @@ export default class RTSPStream extends BaseStream {
       this.remux = new Remuxer(this.video);
       this.remux.attachClient(this);
       this.eventSource.dispatchEvent("tracks", tracks);
-      this.startStreamFlush();
+      /// this.startStreamFlush();
       /// Dispatch avinfo
       this.eventSource.dispatchEvent("info", this._getAVInfo());
     } else {
@@ -287,9 +287,9 @@ export default class RTSPStream extends BaseStream {
       }
     }
    
-    this.sampleQueues[accessunit.ctype].push(accessunit);
+    ///this.sampleQueues[accessunit.ctype].push(accessunit);
 
-    /** *
+    
     if (this.tracksReady) {
       while (this.sampleQueues[accessunit.ctype].length) {
         let sample = this.sampleQueues[accessunit.ctype].shift();
@@ -302,7 +302,7 @@ export default class RTSPStream extends BaseStream {
       } else {
         Log.warn("droped no ready sample!");
       }
-    } */
+    } 
   }
 
   reset() {
