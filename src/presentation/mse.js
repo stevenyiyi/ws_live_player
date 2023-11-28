@@ -370,6 +370,12 @@ export class MSE {
     });
   }
 
+  setScale(rate) {
+    this.players.forEach((video) => {
+      video.playbackRate = rate;
+    });
+  }
+
   setLive(is_live) {
     for (let idx in this.buffers) {
       this.buffers[idx].setLive(is_live);

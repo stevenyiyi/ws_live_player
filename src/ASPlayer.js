@@ -61,9 +61,9 @@ export class ASPlayer {
     this._video.addEventListener(
       "timeupdate",
       () => {
-        if (!this._video.seeking) {
+        if (!this._video.seeking && !this.stream.seekable) {
           this.supposedCurrentTime = this._video.currentTime;
-        }
+        } 
       },
       false
     );
@@ -105,9 +105,9 @@ export class ASPlayer {
   }
 
   /** Load */
-  start() {
+  start(scale = 1) {
     if (this.stream) {
-      return this.stream.load();
+      return this.stream.load(scale);
     } else {
       Promise.reject("Not attach stream!");
     }

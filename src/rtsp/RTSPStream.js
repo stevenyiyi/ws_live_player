@@ -92,7 +92,12 @@ export default class RTSPStream extends BaseStream {
     /** Destory remux */
     if (this.remux) {
       this.remux.destroy();
+      this.remux = null;
     }
+  }
+
+  getScale() {
+    return this.client.getScale();
   }
 
   /// events
@@ -146,7 +151,10 @@ export default class RTSPStream extends BaseStream {
 
     this._decideMSE(tracks);
 
-    if (this.useMSE) {
+    if (this.useMSE) {    
+      /** 设置Video playbackRate */
+      this.remux = new Remuxer(this.video);
+      this.remux.attachClient(this);
       this.eventSource.dispatchEvent("tracks", tracks);
       /// this.startStreamFlush();
       /// Dispatch avinfo
@@ -156,8 +164,8 @@ export default class RTSPStream extends BaseStream {
         "error",
         new ASMediaError(
           ASMediaError.MEDIA_ERR_SRC_NOT_SUPPORTED,
-          "Codec not supported using MSE!",
-        ),
+          "Codec not supported using MSE!"
+        )
       );
       this.destroy();
     }
@@ -184,7 +192,7 @@ export default class RTSPStream extends BaseStream {
     if (!this.firstRAP) {
       /// Drop accessunit ...
       Log.warn(
-        "Receive accessunit, but not found track, discard this access unit!",
+        "Receive accessunit, but not found track, discard this access unit!"
       );
       return;
     }
@@ -252,8 +260,8 @@ export default class RTSPStream extends BaseStream {
           "error",
           new ASMediaError(
             ASMediaError.MEDIA_ERR_AV,
-            "Receive AAC accessunit, but have not config information!",
-          ),
+            "Receive AAC accessunit, but have not config information!"
+          )
         );
         this.destory();
       } else {
@@ -278,20 +286,19 @@ export default class RTSPStream extends BaseStream {
         this.tracksReady = true;
       }
     }
-    if(track.ready) {
-      this.eventSource.dispatchEvent("samples", accessunit);
-    } else {
-      Log.warn("droped no ready sample!");
-    }
    
-    if(this.tracksReady) {
-      while(this.sampleQueues[accessunit.ctype].length) {
+    if (this.tracksReady) {
+      while (this.sampleQueues[accessunit.ctype].length) {
         let sample = this.sampleQueues[accessunit.ctype].shift();
         this.eventSource.dispatchEvent("samples", sample);
-      } 
+      }
       this.eventSource.dispatchEvent("samples", accessunit);
     } else {
-      this.sampleQueues[accessunit.ctype].push(accessunit);
+      if(track.ready) {
+        this.sampleQueues[accessunit.ctype].push(accessunit);
+      } else {
+        Log.warn("droped no ready sample!");
+      }
     }
   }
 
@@ -323,10 +330,7 @@ export default class RTSPStream extends BaseStream {
     }
     this.eventSource.dispatchEvent(
       "error",
-      new ASMediaError(
-        ASMediaError.MEDIA_ERR_NETWORK,
-        "websocket disconected!",
-      ),
+      new ASMediaError(ASMediaError.MEDIA_ERR_NETWORK, "websocket disconected!")
     );
   }
 
@@ -351,22 +355,19 @@ export default class RTSPStream extends BaseStream {
   }
 
   _decideMSE(tracks) {
-    let codecs = [];
-    Log.debug("MSE tracks:", tracks);
-    for (const track of tracks) {
+   Log.debug("MSE tracks:", tracks);
+   tracks.forEach((track) => {
       Log.debug(`track type:${track.type},codec:${track.codec}`);
-      codecs.push(track.codec);
-    }
-    if (MSE.isSupported(codecs)) {
-      this.useMSE = true;
-      this.remux = new Remuxer(this.video);
-      this.remux.MSE.bufferDuration = this.bufferedDuration;
-      this.remux.attachClient(this);
-    } else {
-      Log.error(
-        `MSE not supported codec:video/mp4; codecs="${codecs.join(",")}"`,
-      );
-    }
+      if (MSE.isSupported([track.codec])) {
+        track.useMSE = true;
+        this.useMSE = true;
+      } else {
+        Log.error(
+          `MSE not supported codec:video/mp4; codecs=${track.codec}`
+        );
+        track.useMSE = false;
+      }
+    });
   }
 
   _getAVInfo() {

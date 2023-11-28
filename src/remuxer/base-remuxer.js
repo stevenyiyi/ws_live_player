@@ -67,13 +67,13 @@ export class BaseRemuxer {
       if (!this.pendingUnit) {
         this.pendingUnit = unit;
       } else {
-        let dur = unit.dts - this.pendingUnit.dts;
+        let dur = this.scaled(unit.dts - this.pendingUnit.dts);
         this.samples.push({
           unit: this.pendingUnit,
           pts: this.pendingUnit.pts,
           dts: this.pendingUnit.dts,
           duration: dur,
-          cts: this.pendingUnit.pts - this.pendingUnit.dts,
+          cts: this.scaled(this.pendingUnit.pts - this.pendingUnit.dts),
         });
         len = this.pendingUnit.getSize();
         if(this.mp4track.sps && dur >= 90000) {
@@ -93,9 +93,9 @@ export class BaseRemuxer {
 
   insertDscontinuity() {
     this.pendingUnit = null;
-  //  this.samples = [];
-  //  this.mp4track.len = 0;
-  //  this.mp4track.segmentDuration = 0;
+    ///this.samples = [];
+    ///this.mp4track.len = 0;
+    ///this.mp4track.segmentDuration = 0;
     Log.debug("insertDscontinuity");
 
   }

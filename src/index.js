@@ -12,11 +12,10 @@ let player = new ASPlayer({
   wsurl: "wss://localhost/ws_live",
   rtspurl:
     "rtsp://50010303121110099054:991100@192.168.3.100:5554/live/50010303121329905401?RecordTimeRange=1700270399_1700272552",
-  cacheSize: 1000,
+  cacheSize: 500,
   video: video,
   bufferedDuration: 120,
-  reconnect: true,
-  scale: 1  /** 倍速播放，取值为0.25 、0.5 、1 、2 、4 */
+  reconnect: true
 });
 /** Error handling */
 player.errorHandler = (e) => {
@@ -26,4 +25,5 @@ player.errorHandler = (e) => {
 player.infoHandler = (info) => {
   console.log(info);
 };
-player.start();
+/// scale: default 1  /** 倍速播放，取值为0.25 、0.5 、1 、2 、4 */
+player.start(1);

@@ -89,6 +89,14 @@ export class RTSPClient extends BaseClient {
     return this.clientSM.pause();
   }
 
+  getScale() {
+    let scale = 1;
+    if (this.clientSM) {
+      scale = this.clientSM.scale;
+    }
+    return scale;
+  }
+
   onControl(data) {
     this.clientSM.onControl(data);
   }
@@ -176,6 +184,7 @@ export class RTSPClientSM extends StateMachine {
     this.transport = null;
     this.scale = 1;
     this.pos = 0;
+    this.startScale = 1;
     this.payParser = new RTPPayloadParser();
     this.rtp_channels = new Set();
     this.sessions = {};
@@ -191,15 +200,15 @@ export class RTSPClientSM extends StateMachine {
     this.addState(RTSPClientSM.STATE_INITIAL, {})
       .addState(RTSPClientSM.STATE_OPTIONS, {
         activate: this.sendOptions,
-        finishTransition: this.onOptions
+        finishTransition: this.onOptions,
       })
       .addState(RTSPClientSM.STATE_DESCRIBE, {
         activate: this.sendDescribe,
-        finishTransition: this.onDescribe
+        finishTransition: this.onDescribe,
       })
       .addState(RTSPClientSM.STATE_SETUP, {
         activate: this.sendSetup,
-        finishTransition: this.onSetup
+        finishTransition: this.onSetup,
       })
       .addState(RTSPClientSM.STATE_STREAMS, {})
       .addState(RTSPClientSM.STATE_TEARDOWN, {
@@ -208,7 +217,7 @@ export class RTSPClientSM extends StateMachine {
         },
         finishTransition: () => {
           return this.transitionTo(RTSPClientSM.STATE_INITIAL);
-        }
+        },
       })
       .addTransition(RTSPClientSM.STATE_INITIAL, RTSPClientSM.STATE_OPTIONS)
       .addTransition(RTSPClientSM.STATE_INITIAL, RTSPClientSM.STATE_TEARDOWN)
@@ -260,6 +269,7 @@ export class RTSPClientSM extends StateMachine {
 
   start(scale) {
     if (this.currentState.name !== RTSPClientSM.STATE_STREAMS) {
+      this.startScale = scale;
       return this.transitionTo(RTSPClientSM.STATE_OPTIONS);
     } else {
       // TODO: seekable
@@ -272,13 +282,13 @@ export class RTSPClientSM extends StateMachine {
   }
 
   seek(pos) {
-      // TODO: seekable
-      let promises = [];
-      for (let session in this.sessions) {
-          promises.push(this.sessions[session].sendPlay(pos, this.scale));
-      }
-      this.pos = pos;
-      return Promise.all(promises);
+    // TODO: seekable
+    let promises = [];
+    for (let session in this.sessions) {
+      promises.push(this.sessions[session].sendPlay(pos, this.scale));
+    }
+    this.pos = pos;
+    return Promise.all(promises);
   }
 
   onControl(data) {
@@ -293,7 +303,7 @@ export class RTSPClientSM extends StateMachine {
       this.promises[Number(cseq)].reject(
         new ASMediaError(ASMediaError.MEDIA_ERROR_RTSP, {
           code: 513,
-          statusLine: "Not found CSeq in RTSP response header!"
+          statusLine: "Not found CSeq in RTSP response header!",
         })
       );
     }
@@ -305,13 +315,15 @@ export class RTSPClientSM extends StateMachine {
       this.onRTP({ packet: data.subarray(4), type: channel });
     } else {
       Log.error(`Not found RTSP channel:${channel}!`);
-      this.parent.emit(
-        "error",
-        new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
-          code: 512,
-          statusLine: `Not found RTSP channel:${channel}!`
-        })
-      );
+      if (this.parent) {
+        this.parent.emit(
+          "error",
+          new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
+            code: 512,
+            statusLine: `Not found RTSP channel:${channel}!`,
+          })
+        );
+      }
     }
   }
 
@@ -396,7 +408,7 @@ export class RTSPClientSM extends StateMachine {
     this.cSeq++;
     Object.assign(_params, {
       CSeq: this.cSeq,
-      "User-Agent": RTSPClientSM.USER_AGENT
+      "User-Agent": RTSPClientSM.USER_AGENT,
     });
     if (this.authenticator) {
       _params["Authorization"] = this.authenticator(_cmd);
@@ -426,7 +438,7 @@ export class RTSPClientSM extends StateMachine {
           reject(
             new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
               code: 462,
-              statusLine: "462 Destination Unreachable"
+              statusLine: "462 Destination Unreachable",
             })
           );
         });
@@ -446,7 +458,7 @@ export class RTSPClientSM extends StateMachine {
       let parsed = await this._transportRequest(_data);
 
       // TODO: parse status codes
-      if (parsed.code === 401 /*&& !this.authenticator */) {
+      if (parsed.code === 401) {
         Log.debug(parsed.headers["www-authenticate"]);
         let auth = parsed.headers["www-authenticate"];
         let method = auth.substring(0, auth.indexOf(" "));
@@ -488,7 +500,7 @@ export class RTSPClientSM extends StateMachine {
       if (parsed.code >= 300) {
         throw new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
           code: parsed.code,
-          statusLine: parsed.statusLine
+          statusLine: parsed.statusLine,
         });
       }
       return parsed;
@@ -511,7 +523,7 @@ export class RTSPClientSM extends StateMachine {
 
   sendDescribe() {
     return this.sendRequest("DESCRIBE", this.url, {
-      Accept: "application/sdp"
+      Accept: "application/sdp",
     }).then((data) => {
       this.sdp = new SDPParser();
       return this.sdp
@@ -519,7 +531,7 @@ export class RTSPClientSM extends StateMachine {
         .catch(() => {
           throw new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
             code: 515,
-            statusLine: "Failed to parse SDP"
+            statusLine: "Failed to parse SDP",
           });
         })
         .then(() => {
@@ -557,7 +569,7 @@ export class RTSPClientSM extends StateMachine {
         "error",
         new ASMediaError(ASMediaError.MEDIA_ERR_RTSP, {
           code: 514,
-          statusLine: "No tracks in SDP"
+          statusLine: "No tracks in SDP",
         })
       );
     } else {
@@ -602,13 +614,13 @@ export class RTSPClientSM extends StateMachine {
           }
           let params = {
             timescale: 0,
-            scaleFactor: 0
+            scaleFactor: 0,
           };
           if (track.fmtp && track.fmtp["sprop-parameter-sets"]) {
             let sps_pps = track.fmtp["sprop-parameter-sets"].split(",");
             params = {
               sps: base64ToArrayBuffer(sps_pps[0]),
-              pps: base64ToArrayBuffer(sps_pps[1])
+              pps: base64ToArrayBuffer(sps_pps[1]),
             };
           } else if (track.fmtp && track.fmtp["sprop-vps"]) {
             params.vps = base64ToArrayBuffer(track.fmtp["sprop-vps"]);
@@ -624,13 +636,13 @@ export class RTSPClientSM extends StateMachine {
               params = {
                 config: AACParser.parseAudioSpecificConfig(
                   hexToByteArray(config)
-                )
+                ),
               };
               this.payParser.aacparser.setConfig(params.config);
             } else if (config) {
               // todo: parse audio specific config for mpeg4-generic
               params = {
-                config: AACParser.parseStreamMuxConfig(hexToByteArray(config))
+                config: AACParser.parseStreamMuxConfig(hexToByteArray(config)),
               };
               this.payParser.aacparser.setConfig(params.config);
             }
@@ -644,7 +656,7 @@ export class RTSPClientSM extends StateMachine {
             offset: this.timeOffset[track.fmt[0]],
             type: PayloadType.string_map[track.rtpmap[track.fmt[0]].name],
             params: params,
-            duration: params.duration
+            duration: params.duration,
           };
 
           let session = data.headers.session.split(";")[0];
@@ -658,7 +670,9 @@ export class RTSPClientSM extends StateMachine {
     return Promise.all(streams).then((tracks) => {
       let sessionPromises = [];
       for (let session in this.sessions) {
-        sessionPromises.push(this.sessions[session].start(this.pos, this.scale));
+        sessionPromises.push(
+          this.sessions[session].start(this.pos, this.startScale)
+        );
       }
       return Promise.all(sessionPromises).then(() => {
         this.parent.emit("tracks", tracks);

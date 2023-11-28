@@ -80,24 +80,29 @@ export class Remuxer {
   onTracks(tracks) {
     Log.debug(`ontracks: `, tracks.detail);
     // store available track types
-    tracks.detail.forEach((track, key, tracks) => {
-      this.tracks[track.type] = new Remuxer.TrackConverters[track.type](
-        Remuxer.TrackTimescale[track.type],
-        Remuxer.TrackScaleFactor[track.type],
-        this.client.cacheSize,
-        track.params,
-      );
-      if (track.offset) {
-        this.tracks[track.type].timeOffset = track.offset;
-      }
-      if (track.duration) {
-        this.tracks[track.type].mp4track.duration =
-          track.duration *
-          (this.tracks[track.type].timescale ||
-            Remuxer.TrackTimescale[track.type]);
-        this.tracks[track.type].duration = track.duration;
-      } else {
-        this.tracks[track.type].duration = 1;
+    let scale = this.client.getScale();
+    Log.debug(`Scale:${scale}, video playbackRate:${this.client.video.playbackRate}`);
+    this.MSE.setScale(scale);
+    tracks.detail.forEach((track) => {
+      if (track.useMSE) {
+        this.tracks[track.type] = new Remuxer.TrackConverters[track.type](
+          Remuxer.TrackTimescale[track.type],
+          Remuxer.TrackScaleFactor[track.type] * scale,
+          this.client.cacheSize,
+          track.params
+        );
+        if (track.offset) {
+          this.tracks[track.type].timeOffset = track.offset;
+        }
+        if (track.duration) {
+          this.tracks[track.type].mp4track.duration =
+            track.duration *
+            (this.tracks[track.type].timescale ||
+              Remuxer.TrackTimescale[track.type]);
+          this.tracks[track.type].duration = track.duration;
+        } else {
+          this.tracks[track.type].duration = 1;
+        }
       }
     });
     // this.tracks[track.type].duration
@@ -125,7 +130,7 @@ export class Remuxer {
       let track = this.tracks[track_type];
       if (!MSE.isSupported([track.mp4track.codec])) {
         throw new Error(
-          `${track.mp4track.type} codec ${track.mp4track.codec} is not supported`,
+          `${track.mp4track.type} codec ${track.mp4track.codec} is not supported`
         );
       }
       tracks.push(track.mp4track);
@@ -145,7 +150,7 @@ export class Remuxer {
         hasavc,
         [track.mp4track],
         track.duration * track.timescale,
-        track.timescale,
+        track.timescale
       );
       initmse.push(this.initMSE(track_type, track.mp4track.codec));
     }
@@ -161,7 +166,7 @@ export class Remuxer {
       return this.mse
         .setCodec(
           track_type,
-          `${PayloadType.map[track_type]}/mp4; codecs="${codec}"`,
+          `${PayloadType.map[track_type]}/mp4; codecs="${codec}"`
         )
         .then(() => {
           this.mse.feed(track_type, this.initSegments[track_type]);
@@ -173,8 +178,8 @@ export class Remuxer {
         "error",
         new ASMediaError(
           ASMediaError.MEDIA_ERR_DECODE,
-          `Codecs:${this.codecs} are not supported`,
-        ),
+          `Codecs:${this.codecs} are not supported`
+        )
       );
     }
   }
@@ -182,14 +187,14 @@ export class Remuxer {
   mseError(e) {
     this.eventSource.dispatchEvent(
       "error",
-      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, e),
+      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, e)
     );
   }
 
   mseClose() {
     this.eventSource.dispatchEvent(
       "error",
-      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, "mse closed!"),
+      new ASMediaError(ASMediaError.MEDIA_ERR_DECODE, "mse closed!")
     );
   }
 
@@ -210,7 +215,7 @@ export class Remuxer {
         )
           return;
         Log.debug(
-          `Init MSE for track ${this.tracks[track_type].mp4track.type}`,
+          `Init MSE for track ${this.tracks[track_type].mp4track.type}`
         );
       }
       this.eventSource.dispatchEvent("ready");
@@ -230,7 +235,7 @@ export class Remuxer {
           )
             return;
           Log.debug(
-            `Init MSE for track ${this.tracks[track_type].mp4track.type}`,
+            `Init MSE for track ${this.tracks[track_type].mp4track.type}`
           );
         }
         this.eventSource.dispatchEvent("ready");
@@ -240,7 +245,11 @@ export class Remuxer {
         let track = this.tracks[track_type];
         let pay = track.getPayload();
         if (pay && pay.byteLength) {
-          let moof = MP4.moof(track.seq, track.scaled(track.firstDTS), track.mp4track);
+          let moof = MP4.moof(
+            track.seq,
+            track.scaled(track.firstDTS),
+            track.mp4track
+          );
           let mdat = MP4.mdat(pay);
           let referenceSize = moof.byteLength + mdat.byteLength;
           this.mse.feed(track_type, [
@@ -259,23 +268,29 @@ export class Remuxer {
     let accessunit = ev.detail;
     let type = accessunit.ctype;
     let track = this.tracks[type];
-    if(track) {
+    if (track) {
       if (!this.initialized) {
         this.initMoov();
       }
       if (accessunit.discontinuity) {
-        Log.debug(`discontinuity, dts:${accessunit.dts}, unit dts:${accessunit.units[0].dts}`);
+        Log.debug(
+          `discontinuity, dts:${accessunit.dts}, unit dts:${accessunit.units[0].dts}`
+        );
         this.MSE.abort(type);
         track.insertDscontinuity();
       }
       for (const unit of accessunit.units) {
         track.remux(unit);
       }
-      if(this.initialized && track.checkDrainSamples()) {
+      if (this.initialized && track.checkDrainSamples()) {
         /// Draining sample to MSE
         let pay = track.getPayload();
         if (pay && pay.byteLength) {
-          let moof = MP4.moof(track.seq, track.scaled(track.firstDTS), track.mp4track);
+          let moof = MP4.moof(
+            track.seq,
+            track.scaled(track.firstDTS),
+            track.mp4track
+          );
           let mdat = MP4.mdat(pay);
           let referenceSize = moof.byteLength + mdat.byteLength;
           this.mse.feed(type, [
@@ -284,10 +299,10 @@ export class Remuxer {
             mdat,
           ]);
           track.flush();
+        }
       }
     }
   }
-}
 
   onAudioConfig(ev) {
     if (this.tracks[ev.detail.pay]) {
