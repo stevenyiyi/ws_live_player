@@ -57,7 +57,7 @@ export class RTSPClient extends BaseClient {
     super.start();
     if (this.transport) {
       if (this.connected) {
-        Promise.resolve();
+        return this.clientSM.start(scale);
       } else {
         this.transport
           .connect()

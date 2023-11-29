@@ -268,6 +268,8 @@ export class MSEBuffer {
             }
           }
           if(this.seekMoveToBuffer) {
+            bufferedLen = this.sourceBuffer.buffered.length;
+            currentPlayTime = this.players[0].currentTime;
             let j = 0;
             while(j < bufferedLen) {
               let prevtr = this.sourceBuffer.buffered.end(j);
@@ -275,8 +277,13 @@ export class MSEBuffer {
               if(j >= bufferedLen) {
                 break;
               }
-              if(currentPlayTime > prevtr && currentPlayTime < this.sourceBuffer.buffered.start(j)) {
-                this.players[0].currentTime = this.sourceBuffer.buffered.start(j);
+              let nexttr = this.sourceBuffer.buffered.start(j);
+              if(currentPlayTime > prevtr && currentPlayTime < nexttr) {
+                if((currentPlayTime - prevtr) > (nexttr - currentPlayTime)) {
+                  this.players[0].currentTime = nexttr;
+                } else {
+                  this.players[0].currentTime = prevtr - 1;
+                }
                 this.seekMoveToBuffer = false;
                 break;
               }
@@ -493,7 +500,7 @@ export class MSE {
   }
 
   abort(track) {
-    this.buffers[track].aborting = true;
+    /// this.buffers[track].aborting = true;
     this.buffers[track].seekMoveToBuffer = true;
   }
 }

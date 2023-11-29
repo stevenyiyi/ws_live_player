@@ -86,7 +86,7 @@ export class BaseClient extends TinyEvents {
 
   pause() {
     Log.log("Client paused");
-    this.paused = false;
+    this.paused = true;
   }
 
   stop() {

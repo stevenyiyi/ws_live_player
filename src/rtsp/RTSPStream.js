@@ -53,7 +53,13 @@ export default class RTSPStream extends BaseStream {
     Log.log("load starting!");
     this.client.reset();
     this.client.setSource(this.rtspurl);
-    this.buffering = true;
+    return this.client.start(scale);
+  }
+
+  scalePlay(scale) {
+    if(this.remux) {
+      this.remux.setScale(scale);
+    }
     return this.client.start(scale);
   }
 
@@ -173,7 +179,6 @@ export default class RTSPStream extends BaseStream {
 
   /// Error occure notify
   onError(e) {
-    this.buffering = false;
     this.eventSource.dispatchEvent("error", e);
     this.destroy();
   }
@@ -307,7 +312,6 @@ export default class RTSPStream extends BaseStream {
 
   reset() {
     this.duration = NaN;
-    this.buffering = false;
     /** Clear sampleQueues */
     this.sampleQueues = {};
     /** Clear tracks */

@@ -42,9 +42,13 @@ export class ASPlayer {
       "seeking",
       () => {
         if (this.stream.seekable) {
-          if (!this._is_in_buffered(this._video.currentTime)) {
+          let result = this._is_in_buffered(this._video.currentTime);
+          if (!result.inBuffered) {
             console.log(`seek to ${this._video.currentTime}`);
             this.stream.seek(this._video.currentTime);
+          } else {
+            console.log(`seek to ${result.seekOffset}`);
+            this.stream.seek(result.seekOffset);
           }
         } else {
           let delta = this._video.currentTime - this.supposedCurrentTime;
@@ -113,6 +117,13 @@ export class ASPlayer {
     }
   }
 
+  /** Scale play */
+  scalePlay(scale) {
+    if(this.stream) {
+      this.stream.scalePlay(scale);
+    }
+  }
+
   /** stop */
   stop() {
     this.stream.stop();
@@ -143,16 +154,17 @@ export class ASPlayer {
 
   _is_in_buffered(current_time) {
     let buffereds = this._video.buffered;
-    let f = false;
+    let result = {inBuffered: false, seekOffset: 0};
     for (let i = 0; i < buffereds.length; i++) {
       if (
         current_time >= buffereds.start(i) &&
         current_time <= buffereds.end(i)
       ) {
-        f = true;
+        result.inBuffered = true;
+        result.seekOffset = buffereds.end(i) - 1;
         break;
       }
     }
-    return f;
+    return result;
   }
 }

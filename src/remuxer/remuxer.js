@@ -77,6 +77,13 @@ export class Remuxer {
     this.eventSource.destroy();
   }
 
+  setScale(scale) {
+    for (let track_type in this.tracks) {
+      this.tracks[track_type].scaleFactor = scale;
+    }
+    this.MSE.setScale(scale);
+  }
+
   onTracks(tracks) {
     Log.debug(`ontracks: `, tracks.detail);
     // store available track types
