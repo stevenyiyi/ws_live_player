@@ -43,6 +43,30 @@ export class MP4 {
     return 0x00000002;
   }
 
+  static get kDataOffsetPresent() {
+    return 0x00000001;
+  }
+
+  static get kFirstSampleFlagsPresent() {
+    return 0x00000004;
+  }
+
+  static get kSampleDurationPresent() {
+    return 0x00000100;
+  }
+
+  static get kSampleSizePresent() {
+    return 0x00000200;
+  }
+
+  static get kSampleFlagsPresent() {
+    return 0x00000400;
+  }
+
+  static get kSampleCompositionTimeOffsetPresent() {
+    return 0x00000800;
+  }
+
   static init(hasavc = true, hashvc = false) {
     MP4.types = {
       avc1: [], // codingname
@@ -1185,10 +1209,10 @@ export class MP4 {
   static tfhd(track) {
     let id = track.id;
     let flags =
-      MP4.MOV_TFHD_FLAG_DEFAULT_FLAGS | 
+      MP4.MOV_TFHD_FLAG_DEFAULT_FLAGS |
       MP4.MOV_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX |
       MP4.MOV_TFHD_FLAG_DEFAULT_BASE_IS_MOOF;
-      
+
     if (track.samples.length > 0) {
       flags |= MP4.MOV_TFHD_FLAG_DEFAULT_DURATION;
       flags |= MP4.MOV_TFHD_FLAG_DEFAULT_SIZE;
@@ -1196,10 +1220,10 @@ export class MP4 {
       track.defaultSampleSize = track.samples[0].size;
     } else {
       flags |= MP4.MOV_TFHD_FLAG_DURATION_IS_EMPTY;
-    } 
+    }
 
     let len = 12;
-    if(track.samples.length) {
+    if (track.samples.length) {
       len += 8;
     }
     len += 4;
@@ -1213,13 +1237,12 @@ export class MP4 {
     buf[i++] = (id >> 16) & 0xff;
     buf[i++] = (id >> 8) & 0xff;
     buf[i++] = id & 0xff; // track_ID
-    
+
     buf[i++] = 0x00;
     buf[i++] = 0x00;
     buf[i++] = 0x00;
     buf[i++] = 0x01; ///sample_description_index, CMAF must
 
-    
     if (track.samples.length) {
       buf[i++] = (track.defaultSampleDuration >> 24) & 0xff;
       buf[i++] = (track.defaultSampleDuration >> 16) & 0xff;
@@ -1247,14 +1270,14 @@ export class MP4 {
     buf[i++] = (track.defaultSampleFlags >> 16) & 0xff;
     buf[i++] = (track.defaultSampleFlags >> 8) & 0xff;
     buf[i++] = track.defaultSampleFlags & 0xff;
-   
+
     return buf;
   }
 
   static traf(track, baseMediaDecodeTime) {
     let sampleDependencyTable = MP4.sdtp(track);
     let bufTfhd = MP4.tfhd(track);
-    
+
     return MP4.box(
       MP4.types.traf,
       MP4.box(MP4.types.tfhd, bufTfhd),
@@ -1274,7 +1297,8 @@ export class MP4 {
       MP4.trun(
         track,
         sampleDependencyTable.length + //sdtp
-          bufTfhd.length + 8 + // tfhd
+          bufTfhd.length +
+          8 + // tfhd
           16 + // tfdt
           8 + // traf header
           16 + // mfhd
@@ -1329,66 +1353,100 @@ export class MP4 {
   }
 
   static trun(track, offset) {
-    var samples = track.samples || [],
-      len = samples.length,
-      arraylen = 12 + 16 * len,
-      array = new Uint8Array(arraylen),
-      i,
-      sample,
-      duration,
-      size,
-      flags,
-      cts;
-    offset += 8 + arraylen;
-    array.set(
-      [
-        0x00, // version 0
-        0x00,
-        0x0f,
-        0x01, // flags
-        (len >>> 24) & 0xff,
-        (len >>> 16) & 0xff,
-        (len >>> 8) & 0xff,
-        len & 0xff, // sample_count
-        (offset >>> 24) & 0xff,
-        (offset >>> 16) & 0xff,
-        (offset >>> 8) & 0xff,
-        offset & 0xff, // data_offset
-      ],
-      0
-    );
-    for (i = 0; i < len; i++) {
-      sample = samples[i];
-      duration = sample.duration;
-      size = sample.size;
-      flags = sample.flags;
-      cts = sample.cts;
-      array.set(
-        [
-          (duration >>> 24) & 0xff,
-          (duration >>> 16) & 0xff,
-          (duration >>> 8) & 0xff,
-          duration & 0xff, // sample_duration
-          (size >>> 24) & 0xff,
-          (size >>> 16) & 0xff,
-          (size >>> 8) & 0xff,
-          size & 0xff, // sample_size
-          (flags.isLeading << 2) | flags.dependsOn,
-          (flags.isDependedOn << 6) |
-            (flags.hasRedundancy << 4) |
-            (flags.paddingValue << 1) |
-            flags.isNonSync,
-          flags.degradPrio & (0xf0 << 8),
-          flags.degradPrio & 0x0f, // sample_flags
-          (cts >>> 24) & 0xff,
-          (cts >>> 16) & 0xff,
-          (cts >>> 8) & 0xff,
-          cts & 0xff, // sample_composition_time_offset
-        ],
-        12 + 16 * i
-      );
+    let ver = 0;
+    let len = 12;
+    let samples = track.samples || [];
+    let sampleCount = samples.length;
+    let trFlags = MP4.kDataOffsetPresent;
+    for (let i = 0; i < sampleCount; i++) {
+      if (samples[i].duration !== track.defaultSampleDuration) {
+        trFlags |= MP4.kSampleDurationPresent;
+        len += 4 * sampleCount;
+      }
+      if (samples[i].size !== track.defaultSampleSize) {
+        trFlags |= MP4.kSampleSizePresent;
+        len += 4 * sampleCount;
+      }
+      if (i > 0 && MP4.getSampleFlags(track, i) !== track.defaultSampleFlags) {
+        trFlags |= MP4.kSampleFlagsPresent;
+        len += 4 * sampleCount;
+      }
+      if (samples[i].cts !== 0) {
+        trFlags |= MP4.kSampleCompositionTimeOffsetPresent;
+        len += 4 * sampleCount;
+        if (track.sample[i].cts < 0) {
+          ver = 1;
+        }
+      }
     }
-    return MP4.box(MP4.types.trun, array);
+    if (
+      !(trFlags & MP4.kSampleFlagsPresent) &&
+      sampleCount > 0 &&
+      MP4.getSampleFlags(track, 0) !== track.defaultSampleFlags
+    ) {
+      trFlags |= MP4.kFirstSampleFlagsPresent;
+      len += 4;
+    }
+    offset += len + 8;
+    let buf = new Uint8Array(len);
+    let n = 0;
+    buf[n++] = ver; /// version
+    buf[n++] = (trFlags >> 16) & 0xff;
+    buf[n++] = (trFlags >> 8) & 0xff;
+    buf[n++] = trFlags & 0xff; /// flags
+
+    buf[n++] = (sampleCount >> 24) & 0xff;
+    buf[n++] = (sampleCount >> 16) & 0xff;
+    buf[n++] = (sampleCount >> 8) & 0xff;
+    buf[n++] = sampleCount & 0xff; /// Sample Count
+
+    buf[n++] = (offset >> 24) & 0xff;
+    buf[n++] = (offset >> 16) & 0xff;
+    buf[n++] = (offset >> 8) & 0xff;
+    buf[n++] = offset & 0xff;
+
+    if (trFlags & MP4.kFirstSampleFlagsPresent) {
+      let firtSampleFlags = MP4.getSampleFlags(track, 0);
+      buf[n++] = (firtSampleFlags >> 24) & 0xff;
+      buf[n++] = (firtSampleFlags >> 16) & 0xff;
+      buf[n++] = (firtSampleFlags >> 8) & 0xff;
+      buf[n++] = firtSampleFlags & 0xff;
+    }
+
+    for (let i = 0; i < sampleCount; i++) {
+      if (trFlags & MP4.kSampleDurationPresent) {
+        let duration = samples[i].duration;
+        buf[n++] = (duration >> 24) & 0xff;
+        buf[n++] = (duration >> 16) & 0xff;
+        buf[n++] = (duration >> 8) & 0xff;
+        buf[n++] = duration & 0xff;
+      }
+
+      if (trFlags & MP4.kSampleSizePresent) {
+        let size = samples[i].size;
+        buf[n++] = (size >> 24) & 0xff;
+        buf[n++] = (size >> 16) & 0xff;
+        buf[n++] = (size >> 8) & 0xff;
+        buf[n++] = size & 0xff;
+      }
+
+      if (trFlags & MP4.kSampleFlagsPresent) {
+        let flags = MP4.getSampleFlags(track, i);
+        buf[n++] = (flags >> 24) & 0xff;
+        buf[n++] = (flags >> 16) & 0xff;
+        buf[n++] = (flags >> 8) & 0xff;
+        buf[n++] = flags & 0xff;
+      }
+
+      if (trFlags & MP4.kSampleCompositionTimeOffsetPresent) {
+        let cts = samples[i].cts;
+        buf[n++] = (cts >> 24) & 0xff;
+        buf[n++] = (cts >> 16) & 0xff;
+        buf[n++] = (cts >> 8) & 0xff;
+        buf[n++] = cts & 0xff;
+      }
+    }
+    return MP4.box(MP4.types.trun, buf);
   }
 
   static initSegment(hasavc, tracks, duration, timescale) {
