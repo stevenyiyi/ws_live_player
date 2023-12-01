@@ -7,6 +7,7 @@ import { H265Remuxer } from "./h265.js";
 import { MSE } from "../presentation/mse.js";
 import { PayloadType } from "../StreamDefine.js";
 import { ASMediaError } from "../api/ASMediaError.js";
+import { BaseRemuxer } from "./base-remuxer.js";
 
 const LOG_TAG = "remuxer";
 const Log = getTagged(LOG_TAG);
@@ -304,10 +305,11 @@ export class Remuxer {
         this.initMoov();
       }
       if (accessunit.discontinuity) {
+        let ts = BaseRemuxer.toMS(track.scaled(accessunit.units[0].dts - track.initDTS)) / 1000;
+        track.discontinuity = true;
         Log.debug(
-          `discontinuity, dts:${accessunit.dts}, unit dts:${accessunit.units[0].dts}`
+          `discontinuity, ts:${ts}`
         );
-        this.MSE.abort(type);
         track.insertDscontinuity();
       }
       for (const unit of accessunit.units) {
@@ -317,6 +319,10 @@ export class Remuxer {
         /// Draining sample to MSE
         let pay = track.getPayload();
         if (pay && pay.byteLength) {
+          if(track.discontinuity) {
+            track.discontinuity = false;
+            this.MSE.abort(type);
+          }
           let moof = MP4.moof(
             track.seq,
             track.scaled(track.firstDTS),

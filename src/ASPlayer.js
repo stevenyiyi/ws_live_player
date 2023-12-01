@@ -20,6 +20,7 @@ export class ASPlayer {
   /** video play handler */
   _attachVideo(video) {
     this._video = video;
+    this._video.userSeekClick = true;
     this._video.addEventListener(
       "play",
       () => {
@@ -41,21 +42,27 @@ export class ASPlayer {
     this._video.addEventListener(
       "seeking",
       () => {
-        if (this.stream.seekable) {
-          let result = this._is_in_buffered(this._video.currentTime);
-          if (!result.inBuffered) {
-            console.log(`seek to ${this._video.currentTime}`);
-            this.stream.seek(this._video.currentTime);
+        if (this._video.userSeekClick) {
+          if (this.stream.seekable) {
+            let result = this._is_in_buffered(this._video.currentTime);
+            if (!result.inBuffered) {
+              console.log(`seek to ${this._video.currentTime}`);
+              this.stream.seek(this._video.currentTime);
+            } else {
+              console.log(`seek in buffered,move to:${this._video.currentTime}`);
+              this.stream.seek(this._video.currentTime);
+            }
           } else {
-            console.log(`seek in buffered,move to:${this._video.currentTime}`);
-            this.stream.seek(this._video.currentTime);
+            let delta = this._video.currentTime - this.supposedCurrentTime;
+            if (Math.abs(delta) >= 0.01) {
+              console.log("Seeking is disabled");
+              this._video.currentTime = this.supposedCurrentTime;
+            }
           }
-        } else {
-          let delta = this._video.currentTime - this.supposedCurrentTime;
-          if (Math.abs(delta) >= 0.01) {
-            console.log("Seeking is disabled");
-            this._video.currentTime = this.supposedCurrentTime;
-          }
+        }
+        else {
+          console.log("No user seeking!");
+          this._video.userSeekClick = true;
         }
       },
       false
@@ -67,7 +74,7 @@ export class ASPlayer {
       () => {
         if (!this._video.seeking && !this.stream.seekable) {
           this.supposedCurrentTime = this._video.currentTime;
-        } 
+        }
       },
       false
     );
@@ -93,16 +100,16 @@ export class ASPlayer {
     /** video canpaly handler */
     this._video.addEventListener(
       "canplay",
-     ()=> {
-      /// segmentDuration = video.duration / totalSegments;
-        this._video.play().catch((e)=>{
-          if(e.name === "NotAllowedError") {
+      () => {
+        /// segmentDuration = video.duration / totalSegments;
+        this._video.play().catch((e) => {
+          if (e.name === "NotAllowedError") {
             this._video.muted = true;
             this._video.play();
           }
         });
-  },false);
-}
+      }, false);
+  }
   // TODO: check native support
   isPlaying() {
     return !(this._video.paused || this.stream.paused);
@@ -119,7 +126,7 @@ export class ASPlayer {
 
   /** Scale play */
   scalePlay(scale) {
-    if(this.stream) {
+    if (this.stream) {
       this.stream.scalePlay(scale);
     }
   }
@@ -154,7 +161,7 @@ export class ASPlayer {
 
   _is_in_buffered(current_time) {
     let buffereds = this._video.buffered;
-    let result = {inBuffered: false, seekOffset: 0};
+    let result = { inBuffered: false, seekOffset: 0 };
     for (let i = 0; i < buffereds.length; i++) {
       if (
         current_time >= buffereds.start(i) &&

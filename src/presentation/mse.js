@@ -48,6 +48,7 @@ export class MSEBuffer {
             this.sourceBuffer.buffered.length &&
             this.players[0].currentTime < this.sourceBuffer.buffered.start(0)
           ) {
+            this.players[0].userSeekClick = false;
             this.players[0].currentTime = this.sourceBuffer.buffered.start(0);
           }
         } catch (e) {
@@ -177,7 +178,6 @@ export class MSEBuffer {
   }
 
   feedNext() {
-    // Log.debug("feed next ", this.sourceBuffer.updating);
     if (!this.sourceBuffer.updating && !this.cleaning && this.queue.length) {
       this.doAppend(this.queue.shift());
     }
@@ -253,39 +253,50 @@ export class MSEBuffer {
       try {
         this.sourceBuffer.appendBuffer(data);
         if (this.firstMoveToBufferStart && this.sourceBuffer.buffered.length) {
+          this.players[0].userSeekClick = false;
           this.players[0].currentTime = this.sourceBuffer.buffered.start(0);
           if (this.players[0].autoPlay) {
             this.players[0].start();
           }
           this.firstMoveToBufferStart = false;
-        } else if(this.seekMoveToBuffer && this.sourceBuffer.buffered.length) {
+        } else if (this.seekMoveToBuffer && this.sourceBuffer.buffered.length) {
           let bufferedLen = this.sourceBuffer.buffered.length;
           let currentPlayTime = this.players[0].currentTime;
-          for(let i = 0; i < bufferedLen; i++) {
-            if(currentPlayTime >= this.sourceBuffer.buffered.start(i) && currentPlayTime <= this.sourceBuffer.buffered.end(i)) {
+          /// Log.debug(`Seek current time:${currentPlayTime}`);
+          for (let i = 0; i < bufferedLen; i++) {
+            if (currentPlayTime >= this.sourceBuffer.buffered.start(i) && currentPlayTime <= this.sourceBuffer.buffered.end(i)) {
+              Log.debug("Seeked,CurrentTime in buffered!");
               this.seekMoveToBuffer = false;
               break;
             }
           }
-          if(this.seekMoveToBuffer) {
+          if (this.seekMoveToBuffer) {
             bufferedLen = this.sourceBuffer.buffered.length;
             currentPlayTime = this.players[0].currentTime;
             let j = 0;
-            while(j < bufferedLen) {
+            while (j < bufferedLen) {
+              /// Log.debug(`buffered index${j},start:${this.sourceBuffer.buffered.start(j)},end:${this.sourceBuffer.buffered.end(j)}`);
               let prevtr = this.sourceBuffer.buffered.end(j);
               ++j;
-              if(j >= bufferedLen) {
+              if (j >= bufferedLen) {
                 break;
               }
+              /// Log.debug(`buffered index${j},start:${this.sourceBuffer.buffered.start(j)},end:${this.sourceBuffer.buffered.end(j)}`);
               let nexttr = this.sourceBuffer.buffered.start(j);
-              if(currentPlayTime > prevtr && currentPlayTime < nexttr) {
-                if((currentPlayTime - prevtr) > (nexttr - currentPlayTime)) {
-                  this.players[0].currentTime = nexttr;
-                } else {
-                  this.players[0].currentTime = prevtr - 1;
+              if (currentPlayTime > prevtr && currentPlayTime < nexttr) {
+                let delta1 = Math.abs(prevtr - currentPlayTime);
+                let delta2 = Math.abs(currentPlayTime - nexttr);
+                if (delta1 < 6 || delta2 < 6) {
+                  if (delta1 > delta2) {
+                    this.players[0].userSeekClick = false;
+                    this.players[0].currentTime = nexttr;
+                  } else {
+                    this.players[0].userSeekClick = false;
+                    this.players[0].currentTime = prevtr - 1;
+                  }
+                  this.seekMoveToBuffer = false;
+                  break;
                 }
-                this.seekMoveToBuffer = false;
-                break;
               }
             }
           }
@@ -309,9 +320,7 @@ export class MSEBuffer {
 
   feed(data) {
     this.queue = this.queue.concat(data);
-    // Log.debug(this.sourceBuffer.updating, this.updating, this.queue.length);
     if (this.sourceBuffer && !this.sourceBuffer.updating && !this.cleaning) {
-      // Log.debug('enq feed');
       this.feedNext();
     }
   }
@@ -500,7 +509,13 @@ export class MSE {
   }
 
   abort(track) {
-     ///this.buffers[track].aborting = true;
-     this.buffers[track].seekMoveToBuffer = true;
+    ///this.buffers[track].aborting = true;
+    /// const sourceBufferList = this.mediaSource.activeSourceBuffers;
+    /// for (const sourceBuffer of sourceBufferList) {
+    // Do something with each SourceBuffer, such as call abort()
+    ///  sourceBuffer.abort();
+    /// }
+    /// this.players[0].currentPlayTime = discontinuityTime;
+    this.buffers[track].seekMoveToBuffer = true;
   }
 }
