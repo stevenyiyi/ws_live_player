@@ -47,8 +47,8 @@ export class ASPlayer {
             console.log(`seek to ${this._video.currentTime}`);
             this.stream.seek(this._video.currentTime);
           } else {
-            console.log(`seek to ${result.seekOffset}`);
-            this.stream.seek(result.seekOffset);
+            console.log(`seek in buffered,move to:${this._video.currentTime}`);
+            this.stream.seek(this._video.currentTime);
           }
         } else {
           let delta = this._video.currentTime - this.supposedCurrentTime;

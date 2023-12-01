@@ -500,7 +500,7 @@ export class MSE {
   }
 
   abort(track) {
-    /// this.buffers[track].aborting = true;
-    this.buffers[track].seekMoveToBuffer = true;
+     ///this.buffers[track].aborting = true;
+     this.buffers[track].seekMoveToBuffer = true;
   }
 }

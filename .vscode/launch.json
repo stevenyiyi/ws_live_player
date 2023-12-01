@@ -5,6 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Edge",
+            "request": "launch",
+            "type": "msedge",
+            "url": "http://localhost:1234",
+            "webRoot": "${workspaceFolder}",
+            "sourceMapPathOverrides": {
+                "/__parcel_source_root/*": "${webRoot}/*"
+              }
+        },
+
+        {
             "type": "chrome",
             "request": "launch",
             "name": "针对 localhost 启动 Chrome",
