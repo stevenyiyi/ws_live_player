@@ -49,8 +49,8 @@ export class ASPlayer {
               console.log(`seek to ${this._video.currentTime}`);
               this.stream.seek(this._video.currentTime);
             } else {
-              console.log(`seek in buffered,move to:${this._video.currentTime}`);
-              this.stream.seek(this._video.currentTime);
+              console.log(`seek in buffered,move to:${result.seekOffset}`);
+              this.stream.seek(result.seekOffset);
             }
           } else {
             let delta = this._video.currentTime - this.supposedCurrentTime;
@@ -136,9 +136,9 @@ export class ASPlayer {
     this.stream.stop();
   }
 
-  /** destory */
+  /** destroy */
   destroy() {
-    this.stream.destory();
+    this.stream.destroy();
   }
 
   _onInfo(info) {
@@ -168,7 +168,7 @@ export class ASPlayer {
         current_time <= buffereds.end(i)
       ) {
         result.inBuffered = true;
-        result.seekOffset = buffereds.end(i) - 1;
+        result.seekOffset = buffereds.end(i);
         break;
       }
     }

@@ -69,6 +69,10 @@ export default class RTSPStream extends BaseStream {
     return this.client.seek(offset);
   }
 
+  getSeekPostion() {
+    return this.client.getSeekPostion();
+  }
+
   abort() {
     this.client.stop().then(() => {
       if (this.client.transport) {

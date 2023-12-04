@@ -97,6 +97,14 @@ export class RTSPClient extends BaseClient {
     return scale;
   }
 
+  getSeekPostion() {
+    let pos = 0;
+    if(this.clientSM) {
+      pos = this.clientSM.pos;
+    }
+    return pos;
+  }
+
   onControl(data) {
     this.clientSM.onControl(data);
   }

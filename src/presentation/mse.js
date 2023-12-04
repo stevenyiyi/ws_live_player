@@ -16,8 +16,6 @@ export class MSEBuffer {
     this.cleanRanges = [];
     this.updatesToCleanup = 0;
     this.firstMoveToBufferStart = true;
-    this.seekMoveToBuffer = false;
-    this.aborting = false;
 
     Log.debug(`Use codec: ${codec}`);
 
@@ -77,13 +75,6 @@ export class MSEBuffer {
         this.cleanupBuffer();
         this.updatesToCleanup = 0;
       }
-
-      if (this.aborting) {
-        Log.debug(`${this.codec} aborting`);
-        this.sourceBuffer.abort();
-        this.aborting = false;
-      }
-
       this.feedNext();
     });
 
@@ -242,7 +233,7 @@ export class MSEBuffer {
       Log.error(`Error occured: ${MSE.ErrorNotes[err.code]}`);
       try {
         this.players.forEach((video) => {
-          video.stop();
+          video.pause();
         });
         this.mediaSource.endOfStream();
       } catch (e) {
@@ -252,55 +243,6 @@ export class MSEBuffer {
     } else {
       try {
         this.sourceBuffer.appendBuffer(data);
-        if (this.firstMoveToBufferStart && this.sourceBuffer.buffered.length) {
-          this.players[0].userSeekClick = false;
-          this.players[0].currentTime = this.sourceBuffer.buffered.start(0);
-          if (this.players[0].autoPlay) {
-            this.players[0].start();
-          }
-          this.firstMoveToBufferStart = false;
-        } else if (this.seekMoveToBuffer && this.sourceBuffer.buffered.length) {
-          let bufferedLen = this.sourceBuffer.buffered.length;
-          let currentPlayTime = this.players[0].currentTime;
-          /// Log.debug(`Seek current time:${currentPlayTime}`);
-          for (let i = 0; i < bufferedLen; i++) {
-            if (currentPlayTime >= this.sourceBuffer.buffered.start(i) && currentPlayTime <= this.sourceBuffer.buffered.end(i)) {
-              Log.debug("Seeked,CurrentTime in buffered!");
-              this.seekMoveToBuffer = false;
-              break;
-            }
-          }
-          if (this.seekMoveToBuffer) {
-            bufferedLen = this.sourceBuffer.buffered.length;
-            currentPlayTime = this.players[0].currentTime;
-            let j = 0;
-            while (j < bufferedLen) {
-              /// Log.debug(`buffered index${j},start:${this.sourceBuffer.buffered.start(j)},end:${this.sourceBuffer.buffered.end(j)}`);
-              let prevtr = this.sourceBuffer.buffered.end(j);
-              ++j;
-              if (j >= bufferedLen) {
-                break;
-              }
-              /// Log.debug(`buffered index${j},start:${this.sourceBuffer.buffered.start(j)},end:${this.sourceBuffer.buffered.end(j)}`);
-              let nexttr = this.sourceBuffer.buffered.start(j);
-              if (currentPlayTime > prevtr && currentPlayTime < nexttr) {
-                let delta1 = Math.abs(prevtr - currentPlayTime);
-                let delta2 = Math.abs(currentPlayTime - nexttr);
-                if (delta1 < 6 || delta2 < 6) {
-                  if (delta1 > delta2) {
-                    this.players[0].userSeekClick = false;
-                    this.players[0].currentTime = nexttr;
-                  } else {
-                    this.players[0].userSeekClick = false;
-                    this.players[0].currentTime = prevtr - 1;
-                  }
-                  this.seekMoveToBuffer = false;
-                  break;
-                }
-              }
-            }
-          }
-        }
       } catch (e) {
         if (e.name === "QuotaExceededError") {
           Log.debug(`${this.codec} quota fail`);
@@ -368,6 +310,7 @@ export class MSE {
     this.bufferDuration_ = 120;
     this.mediaSource = new MediaSource();
     this.eventSource = new EventEmitter(this.mediaSource);
+    this.aborting = false;
     this.reset();
   }
 
@@ -493,6 +436,7 @@ export class MSE {
     this.updating = false;
     this.resolved = false;
     this.buffers = {};
+    this.aborting = false;
   }
 
   setCodec(track, mimeCodec) {
@@ -508,14 +452,61 @@ export class MSE {
     }
   }
 
-  abort(track) {
+  realMoveToBuffer(timeid, pos) {
+    clearInterval(timeid);
+    Log.debug(`Seeking move to buffered postion:${pos}`);
+    this.players[0].userSeekClick = false;
+    this.players[0].currentTime = pos;
+    this.aborting = false;
+  }
+
+  moveSeekBuffer() {
+    if (this.aborting) return;
+
+    this.aborting = true;
+    const timerid = setInterval(() => {
+      let isInBuffered = false;
+      let currentPlayTime = this.players[0].currentTime;
+      let buffered = this.players[0].buffered;
+      let bufferedLen = this.players[0].buffered.length;
+      Log.debug(`Seek current time:${currentPlayTime}`);
+      for (let i = 0; i < bufferedLen; i++) {
+        if (
+          currentPlayTime >= buffered.start(i) &&
+          currentPlayTime <= buffered.end(i)
+        ) {
+          clearInterval(timerid);
+          isInBuffered = true;
+          this.aborting = false;
+          break;
+        }
+      }
+      if (!isInBuffered) {
+        for(let i = 0; i < bufferedLen; i++) {
+          let bstart = buffered.start(i);
+          let bend = buffered.end(i);
+          let dur = bend - bstart;
+          Log.debug(
+            `buffered index${i},start:${bstart},end:${bend}, duratiom:${dur}`
+          );
+          if (currentPlayTime < bstart && dur >= 1) {
+            let delta = bstart - currentPlayTime;
+            if (delta <= 5 && dur >= 1) {
+              this.realMoveToBuffer(timerid, bstart);
+              break;
+            }
+          }
+        }
+      }
+    }, 500);
+  }
+
+  abort() {
     ///this.buffers[track].aborting = true;
-    /// const sourceBufferList = this.mediaSource.activeSourceBuffers;
-    /// for (const sourceBuffer of sourceBufferList) {
-    // Do something with each SourceBuffer, such as call abort()
-    ///  sourceBuffer.abort();
-    /// }
-    /// this.players[0].currentPlayTime = discontinuityTime;
-    this.buffers[track].seekMoveToBuffer = true;
+    const sourceBufferList = this.mediaSource.activeSourceBuffers;
+    for (const sourceBuffer of sourceBufferList) {
+      /// Do something with each SourceBuffer, such as call abort()
+      sourceBuffer.abort();
+    }
   }
 }

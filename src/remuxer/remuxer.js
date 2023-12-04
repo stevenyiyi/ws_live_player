@@ -307,6 +307,7 @@ export class Remuxer {
       if (accessunit.discontinuity) {
         let ts = BaseRemuxer.toMS(track.scaled(accessunit.units[0].dts - track.initDTS)) / 1000;
         track.discontinuity = true;
+        track.discontinuityTs = ts;
         Log.debug(
           `discontinuity, ts:${ts}`
         );
@@ -316,13 +317,18 @@ export class Remuxer {
         track.remux(unit);
       }
       if (this.initialized && track.checkDrainSamples()) {
+
+        if(track.discontinuity) {
+          if(track.mp4track.type === "video") {
+            /// this.MSE.abort();
+            this.mse.moveSeekBuffer();
+          }
+          track.discontinuity = false;
+        }
+
         /// Draining sample to MSE
         let pay = track.getPayload();
         if (pay && pay.byteLength) {
-          if(track.discontinuity) {
-            track.discontinuity = false;
-            this.MSE.abort(type);
-          }
           let moof = MP4.moof(
             track.seq,
             track.scaled(track.firstDTS),
