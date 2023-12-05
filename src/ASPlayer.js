@@ -1,6 +1,6 @@
 import { getTagged } from "./utils/logger.js";
 import RTSPStream from "./rtsp/RTSPStream";
-const LOG_TAG = "RTSPStream";
+const LOG_TAG = "ASPlayer";
 const Log = getTagged(LOG_TAG);
 export class ASPlayer {
   constructor(options) {
@@ -50,7 +50,7 @@ export class ASPlayer {
               this.stream.seek(this._video.currentTime);
             } else {
               console.log(`seek in buffered,move to:${result.seekOffset}`);
-              this.stream.seek(result.seekOffset);
+              this.stream.seek(this._video.currentTime);
             }
           } else {
             let delta = this._video.currentTime - this.supposedCurrentTime;
