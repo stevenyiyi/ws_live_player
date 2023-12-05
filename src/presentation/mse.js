@@ -243,6 +243,14 @@ export class MSEBuffer {
     } else {
       try {
         this.sourceBuffer.appendBuffer(data);
+        if (this.firstMoveToBufferStart && this.sourceBuffer.buffered.length) {
+          this.players[0].userSeekClick = false;
+          this.players[0].currentTime = this.sourceBuffer.buffered.start(0);
+          if (this.players[0].autoPlay) {
+              this.players[0].start();
+          }
+          this.firstMoveToBufferStart = false;
+      }
       } catch (e) {
         if (e.name === "QuotaExceededError") {
           Log.debug(`${this.codec} quota fail`);
