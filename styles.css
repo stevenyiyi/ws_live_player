@@ -1,5 +1,8 @@
 body {
   font-family: sans-serif;
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 0 20px;
 }
 
 .video__container {
@@ -20,4 +23,8 @@ body {
   object-position: center;
   z-index: auto;
   background-color: black;
+}
+
+.demo {
+  border: 2px dashed rgba(0, 0, 0, 0.05);
 }

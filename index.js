@@ -1,10 +1,14 @@
 import "./styles.css";
+import { RecordSeeker } from "./src/RecordSeeker";
 import { ASPlayer } from "./src/ASPlayer";
 document.getElementById("app").innerHTML = `
 <h1>rtsp player</h1>
+<div>
 <div class="video__container">
 <video id="test_video" controls autoplay>
 </video>
+</div>
+<div id="demo" class="demo"></div>
 </div>
 `;
 let video = document.getElementById("test_video");
@@ -33,5 +37,7 @@ player.errorHandler = (e) => {
 player.infoHandler = (info) => {
   console.log(info);
 };
+let dom = document.getElementById("demo");
+RecordSeeker(dom, {beginTime: '2020-09-09T08:00:00', endTime: '2020-09-09T09:15:00', chunks: 20});
 /// scale: default 1  /** 倍速播放，取值为0.25 、0.5 、1 、2 、4 */
 player.start(1);
