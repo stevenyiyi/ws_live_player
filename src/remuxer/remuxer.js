@@ -69,7 +69,8 @@ export class Remuxer {
   }
 
   destroy() {
-    /// this.mseEventSource.destroy();
+    Log.debug('remux destroy!');
+    this.mseEventSource.destroy();
     this.mse.destroy();
     this.mse = null;
 
@@ -372,12 +373,6 @@ export class Remuxer {
   detachClient() {
     if (this.client) {
       this.clientEventSource.destroy();
-      // this.client.eventSource.removeEventListener('samples', this.onSamples.bind(this));
-      // this.client.eventSource.removeEventListener('audio_config', this.onAudioConfig.bind(this));
-      // // TODO: clear other listeners
-      // this.client.eventSource.removeEventListener('clear', this._clearListener);
-      // this.client.eventSource.removeEventListener('tracks', this._tracksListener);
-      // this.client.eventSource.removeEventListener('flush', this._flushListener);
       this.client = null;
     }
   }

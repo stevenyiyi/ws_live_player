@@ -91,10 +91,10 @@ export default class RTSPStream extends BaseStream {
     return this.client.stop();
   }
 
-  destroy() {
+ async destroy() {
     Log.debug("destroy");
-    this.client.reset();
-    this.client.destroy();
+    await this.client.reset();
+    await this.client.destroy();
     /** Clear sampleQueues */
     this.sampleQueues = {};
     /** Clear tracks */

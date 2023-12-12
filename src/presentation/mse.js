@@ -127,7 +127,7 @@ export class MSEBuffer {
 
   async destroy() {
     this.eventSource.destroy();
-    await this.clear();
+    ///await this.clear();
     this.queue = [];
     this.mediaSource.removeSourceBuffer(this.sourceBuffer);
   }
@@ -346,11 +346,21 @@ export class MSE {
     return this.bufferDuration_;
   }
 
-  destroy() {
-    this.reset();
+  deattachPlayers() {
+    this.players.forEach((video) => {
+      video.pause();
+      video.src = "";
+      video.load();
+    });
+  }
+
+  async destroy() {
+    Log.debug('mse destory!');
+    await this.reset();
     this.eventSource.destroy();
     this.mediaSource = null;
     this.eventSource = null;
+    this.deattachPlayers();
   }
 
   play() {
@@ -437,7 +447,7 @@ export class MSE {
       await this.buffers[track].destroy();
       delete this.buffers[track];
     }
-    if (this.mediaSource.readyState == "open") {
+    if(this.mediaSource && this.mediaSource.readyState == "open") {
       this.mediaSource.duration = 0;
       this.mediaSource.endOfStream();
     }

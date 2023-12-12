@@ -45,8 +45,8 @@ export class BaseClient extends TinyEvents {
   }
 
   async destroy() {
+    
     this.detachTransport();
-
     if (this.transport) {
       await this.transport.disconnect();
       this.transport = null;

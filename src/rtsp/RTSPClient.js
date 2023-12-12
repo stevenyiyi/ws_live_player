@@ -43,9 +43,9 @@ export class RTSPClient extends BaseClient {
     this.clientSM.transport = null;
   }
 
-  reset() {
+  async reset() {
     super.reset();
-    this.clientSM.reset();
+    await this.clientSM.reset();
   }
 
   async destroy() {
