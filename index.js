@@ -1,5 +1,4 @@
 import "./styles.css";
-import { RecordSeeker } from "./src/RecordSeeker";
 import { ASPlayer } from "./src/ASPlayer";
 document.getElementById("app").innerHTML = `
 <h1>rtsp player</h1>
@@ -8,7 +7,6 @@ document.getElementById("app").innerHTML = `
 <video id="test_video" controls autoplay>
 </video>
 </div>
-<div id="demo" class="demo"></div>
 <div class="actions">
 <button type="button" id="butDestroy">destroy</button>
 <button type="button" id="butLoad">load</button>
