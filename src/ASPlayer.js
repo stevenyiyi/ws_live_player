@@ -11,6 +11,8 @@ export class ASPlayer {
     this.queryCredentials = null;
     this.bufferDuration_ = 120;
     this.supposedCurrentTime = 0;
+    this.lastPlayPosition = 0;
+    this.startBufferingTime = 0;
     this.stream = new RTSPStream(options); 
     this.stream.eventSource.addEventListener("error", this._onError.bind(this));
     this.stream.eventSource.addEventListener("info", this._onInfo.bind(this));
@@ -52,8 +54,7 @@ export class ASPlayer {
           this._video.currentTime = this.supposedCurrentTime;
         }
       }
-    }
-    else {
+    } else {
       console.log("No user seeking!");
       this._video.userSeekClick = true;
     }
@@ -62,6 +63,36 @@ export class ASPlayer {
   _timeupdateHandler() {
     if (!this._video.seeking && !this.stream.seekable) {
       this.supposedCurrentTime = this._video.currentTime;
+    } else {
+      let currentPlayTime = this._video.currentTime;
+      if(!this._video.paused && currentPlayTime === this.lastPlayPosition) {
+        if(!this.startBufferingTime) {
+          this.startBufferingTime = window.performance.now();
+        } else {
+          let bufferingDuration = Math.round(window.performance.now() - this.startBufferingTime);
+          if( bufferingDuration >= 10000) {
+            /// Check buffered of video, to skip next buffered
+            let buffereds = this._video.buffered;
+            let bufferedLen = buffereds.length;
+            for(let i = 0; i < bufferedLen; i++) {
+              if(currentPlayTime < buffereds.start(i)) {
+                let offsetDuration = Math.round(buffereds.start(i) - currentPlayTime);
+                Log.debug(`Current play time:${currentPlayTime}, next buffered start:${buffereds.start(i)}`);
+                if( offsetDuration < 10) {
+                  this._video.userSeekClick = false;
+                  currentPlayTime =  buffereds.start(i);
+                  this._video.currentTime = currentPlayTime;
+                  this.startBufferingTime = 0;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      } else {
+        this.startBufferingTime = 0;
+      }
+      this.lastPlayPosition = currentPlayTime;
     }
   }
 
