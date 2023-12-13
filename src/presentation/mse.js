@@ -493,6 +493,7 @@ export class MSE {
           currentPlayTime >= buffered.start(i) &&
           currentPlayTime <= buffered.end(i)
         ) {
+          Log.debug(`seek position in buffered, begin:${buffered.start(i)},end:${buffered.end(i)}`);
           clearInterval(timerid);
           isInBuffered = true;
           this.aborting = false;
