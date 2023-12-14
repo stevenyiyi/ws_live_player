@@ -26,6 +26,14 @@ export class BaseRemuxer {
     Log.debug(`Draining duration:${drainDuration}`);
   }
 
+  setScale(scaleFactor) {
+    this.scaleFactor = scaleFactor;
+    this.pendingUnit = null;
+    this.samples = [];
+    this.mp4track.len = 0;
+    this.mp4track.segmentDuration = 0;
+  }
+
   scaled(timestamp) {
     return timestamp / this.scaleFactor;
   }

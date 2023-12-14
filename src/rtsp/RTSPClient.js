@@ -53,17 +53,17 @@ export class RTSPClient extends BaseClient {
     await super.destroy();
   }
 
-  start(scale = 1) {
+  start(scale = 1, offset = 0) {
     super.start();
     if (this.transport) {
       if (this.connected) {
-        return this.clientSM.start(scale);
+        return this.clientSM.start(scale, offset);
       } else {
         this.transport
           .connect()
           .then(() => {
             this.connected = true;
-            return this.clientSM.start(scale);
+            return this.clientSM.start(scale, offset);
           })
           .catch((e) => {
             this.connected = false;
@@ -275,9 +275,10 @@ export class RTSPClientSM extends StateMachine {
     await this.transitionTo(RTSPClientSM.STATE_INITIAL);
   }
 
-  start(scale) {
+  start(scale = 1, offset = 0) {
     if (this.currentState.name !== RTSPClientSM.STATE_STREAMS) {
       this.startScale = scale;
+      this.pos = offset;
       return this.transitionTo(RTSPClientSM.STATE_OPTIONS);
     } else {
       // TODO: seekable

@@ -54,6 +54,7 @@ export class RTSPSession {
       this.client.scale = scale;
     } else {
       params["Range"] = `npt=${pos}-`;
+      this.client.pos = pos;
     }
 
     let data = await this.sendRequest("PLAY", params);

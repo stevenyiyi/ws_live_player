@@ -79,7 +79,7 @@ export class BaseClient extends TinyEvents {
   }
   reset() {}
 
-  start(scale = 1) {
+  start(scale = 1, pos = 0) {
     Log.log("Client started");
     this.paused = false;
   }

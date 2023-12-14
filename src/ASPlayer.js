@@ -11,6 +11,7 @@ export class ASPlayer {
     this.queryCredentials = null;
     this.bufferDuration_ = 120;
     this.supposedCurrentTime = 0;
+    this.runing = false;
     this.stream = new RTSPStream(options); 
     this.stream.eventSource.addEventListener("error", this._onError.bind(this));
     this.stream.eventSource.addEventListener("info", this._onInfo.bind(this));
@@ -43,7 +44,7 @@ export class ASPlayer {
           this.stream.seek(this._video.currentTime);
         } else {
           console.log(`seek in buffered,move to:${result.seekOffset}`);
-          this.stream.seek(this._video.currentTime);
+          this.stream.seek(result.seekOffset);
         }
       } else {
         let delta = this._video.currentTime - this.supposedCurrentTime;
@@ -137,9 +138,11 @@ export class ASPlayer {
   }
 
   /** Load */
-  start(scale = 1) {
+  start(scale = 1, offset = 0) {
     if (this.stream) {
-      return this.stream.load(scale);
+      this._video.userSeekClick = false;
+      this._video.currentTime = offset;
+      return this.stream.load(scale, offset);
     } else {
       Promise.reject("Not attach stream!");
     }

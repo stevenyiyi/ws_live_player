@@ -49,11 +49,11 @@ export default class RTSPStream extends BaseStream {
   /// Public methods
 
   /// Override method, return Promise
-  load(scale = 1) {
+  load(scale = 1, offset = 0) {
     Log.log("load starting!");
     this.client.reset();
     this.client.setSource(this.rtspurl);
-    return this.client.start(scale);
+    return this.client.start(scale, offset);
   }
 
   scalePlay(scale) {
@@ -69,7 +69,7 @@ export default class RTSPStream extends BaseStream {
     return this.client.seek(offset);
   }
 
-  getSeekPostion() {
+  getSeekPosition() {
     return this.client.getSeekPostion();
   }
 
@@ -110,7 +110,7 @@ export default class RTSPStream extends BaseStream {
     return this.client.getScale();
   }
 
-  /// events
+   /// events
   onTracks(tracks) {
     Log.debug("onTracks:", tracks);
     this.tracks = tracks;

@@ -10,6 +10,11 @@ document.getElementById("app").innerHTML = `
 <div class="actions">
 <button type="button" id="butDestroy">destroy</button>
 <button type="button" id="butLoad">load</button>
+<button type="button" id="quarter">0.25倍</button>
+<button type="button" id="half">0.5倍</button>
+<button type="button" id="one">1倍</button>
+<button type="button" id="two">2倍</button>
+<button type="button" id="four">4倍</button>
 </div>
 </div>
 `;
@@ -45,7 +50,7 @@ function start() {
     console.log(info);
   };
   /// scale: default 1  /** 倍速播放，取值为0.25 、0.5 、1 、2 、4 */
-  player.start(1);
+  player.start(1, 1000);
 }
 
 let butDestroy = document.getElementById("butDestroy");
@@ -56,4 +61,29 @@ butDestroy.onclick = function () {
 let butLoad = document.getElementById("butLoad");
 butLoad.onclick = function () {
   start();
+}
+
+let butQuarter = document.querySelector("#quarter");
+butQuarter.onclick = function () {
+  player.scalePlay(0.25);
+}
+
+let butHalf = document.querySelector("#half");
+butHalf.onclick = function () {
+  player.scalePlay(0.5);
+}
+
+let butOne = document.querySelector("#one");
+butOne.onclick = function () {
+  player.scalePlay(1);
+}
+
+let butTwo = document.querySelector("#two");
+butTwo.onclick = function () {
+  player.scalePlay(2);
+}
+
+let butFour = document.querySelector("#four");
+butFour.onclick = function () {
+  player.scalePlay(4);
 }

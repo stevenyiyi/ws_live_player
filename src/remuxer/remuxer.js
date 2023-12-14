@@ -116,8 +116,8 @@ export class Remuxer {
         }
       }
     });
-    // this.tracks[track.type].duration
     this.mse.setLive(!this.client.seekable);
+    this.mse.setFirstBufferedStart(this.client.getSeekPosition() === 0 ? true : false);
   }
 
   setTimeOffset(timeOffset, track) {

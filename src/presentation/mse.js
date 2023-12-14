@@ -44,10 +44,10 @@ export class MSEBuffer {
         try {
           if (
             this.sourceBuffer.buffered.length &&
-            this.players[0].currentTime < this.sourceBuffer.buffered.start(0)
+            this.scaled(this.players[0].currentTime) < this.sourceBuffer.buffered.start(0)
           ) {
             this.players[0].userSeekClick = false;
-            this.players[0].currentTime = this.sourceBuffer.buffered.start(0);
+            this.players[0].currentTime = this.unscaled(this.sourceBuffer.buffered.start(0));
           }
         } catch (e) {
           // TODO: do something?
@@ -100,26 +100,82 @@ export class MSEBuffer {
     // TODO: cleanup every hour for live streams
   }
 
-  cleanupBuffer() {
-    if (this.sourceBuffer.buffered.length && !this.sourceBuffer.updating) {
-      let currentPlayTime = this.players[0].currentTime;
-      let startBuffered = this.sourceBuffer.buffered.start(0);
-      let endBuffered = this.sourceBuffer.buffered.end(0);
-      let bufferedDuration = endBuffered - startBuffered;
-      let removeEnd = endBuffered - this.parent.bufferDuration;
+  scaled(timestamp) {
+    return timestamp / this.parent.scaleFactor;
+  }
 
-      if (
-        removeEnd > 0 &&
-        bufferedDuration > this.parent.bufferDuration &&
-        currentPlayTime > startBuffered &&
-        currentPlayTime > removeEnd
-      ) {
-        try {
-          /// Log.debug("Remove media segments", startBuffered, removeEnd);
-          this.sourceBuffer.remove(startBuffered, removeEnd);
-        } catch (e) {
-          Log.warn("Failed to cleanup buffer");
-          this.parent.eventSource.dispatchEvent("error", e);
+  unscaled(timestamp) {
+    return timestamp * this.parent.scaleFactor;
+  }
+
+  firstMoveToBufferedStart(enabled) {
+    this.firstMoveToBufferStart = enabled;
+  }
+
+  getBufferedDuration() {
+    let duration = 0;
+    let buffered = this.sourceBuffer.buffered;
+    for (let i = 0; i < buffered.length; i++) {
+      duration += buffered.end(i) - buffered.start(i);
+    }
+    return duration;
+  }
+
+  isInBuffered() {
+    let currentPlayTime = this.scaled(this.players[0].currentTime);
+    let buffered = this.sourceBuffer.buffered;
+    let f = false;
+    for (let i = 0; i < buffered.length; i++) {
+      if (currentPlayTime >= buffered.start(i) && currentPlayTime <= buffered.end(i)) {
+        if (buffered.end(i) === currentPlayTime) {
+          Log.warn(`currentTime:${currentPlayTime} is end of buffered!`)
+        }
+        f = true;
+        break;
+      }
+    }
+    return f;
+  }
+
+  checkBuffer() {
+    if (!this.isInBuffered()) {
+      let currentPlayTime = this.scaled(this.players[0].currentTime);
+      let buffered = this.sourceBuffer.buffered;
+      for (let i = 0; i < buffered.length; i++) {
+        if (currentPlayTime < buffered.start(i) && (buffered.start(i) - currentPlayTime) <= 5) {
+          Log.debug(`currentTime:${currentPlayTime} move to buffered position:${buffered.start(i)} playing!`)
+          this.players[0].userSeekClick = false;
+          this.players[0].currentTime = this.unscaled(buffered.start(i));
+          break;
+        }
+      }
+    }
+  }
+
+  cleanupBuffer() {
+    this.checkBuffer();
+    if (this.sourceBuffer.buffered.length && !this.sourceBuffer.updating) {
+      let currentPlayTime = this.scaled(this.players[0].currentTime);
+      let bufferedDuration = this.getBufferedDuration();
+      if (bufferedDuration > this.parent.bufferDuration) {
+        let buffered = this.sourceBuffer.buffered;
+        for (let i = 0; i < buffered.length; i++) {
+          let starttime = buffered.start(i);
+          let endtime = buffered.end(i);
+          try {
+            if (!this.sourceBuffer.updating) {
+              if (currentPlayTime >= starttime && currentPlayTime <= endtime) {
+                if (currentPlayTime > starttime) {
+                  this.sourceBuffer.remove(starttime, currentPlayTime);
+                }
+              } else {
+                this.sourceBuffer.remove(starttime, endtime);
+              }
+            }
+          } catch (e) {
+            Log.warn("Failed to cleanup buffer:", e);
+            this.parent.eventSource.dispatchEvent("error", e);
+          }
         }
       }
     }
@@ -139,7 +195,7 @@ export class MSEBuffer {
       // TODO: await remove
       this.cleaning = true;
       promises.push(
-        new Promise((resolve, reject) => {
+        new Promise((resolve) => {
           this.cleanResolvers.push(resolve);
           if (!this.sourceBuffer.updating) {
             this.sourceBuffer.remove(
@@ -203,7 +259,7 @@ export class MSEBuffer {
         let removeStart = this.sourceBuffer.buffered.start(i);
         let removeEnd = this.sourceBuffer.buffered.end(i);
         if (
-          this.players[0].currentTime <= removeStart ||
+          this.scaled(this.players[0].currentTime) <= removeStart ||
           removeBound <= removeStart
         )
           continue;
@@ -245,12 +301,12 @@ export class MSEBuffer {
         this.sourceBuffer.appendBuffer(data);
         if (this.firstMoveToBufferStart && this.sourceBuffer.buffered.length) {
           this.players[0].userSeekClick = false;
-          this.players[0].currentTime = this.sourceBuffer.buffered.start(0);
+          this.players[0].currentTime = this.unscaled(this.sourceBuffer.buffered.start(0));
           if (this.players[0].autoPlay) {
-              this.players[0].start();
+            this.players[0].start();
           }
           this.firstMoveToBufferStart = false;
-      }
+        }
       } catch (e) {
         if (e.name === "QuotaExceededError") {
           Log.debug(`${this.codec} quota fail`);
@@ -319,6 +375,7 @@ export class MSE {
     this.mediaSource = new MediaSource();
     this.eventSource = new EventEmitter(this.mediaSource);
     this.aborting = false;
+    this.scaleFactor = 1.0;
     this.reset();
   }
 
@@ -376,6 +433,8 @@ export class MSE {
     this.players.forEach((video) => {
       video.playbackRate = rate;
     });
+    this.scaleFactor = rate;
+    Log.debug(`video scale:${this.players[0].playbackRate}`);
   }
 
   setLive(is_live) {
@@ -383,6 +442,12 @@ export class MSE {
       this.buffers[idx].setLive(is_live);
     }
     this.is_live = is_live;
+  }
+
+  setFirstBufferedStart(enabled) {
+    for (let idx in this.buffers) {
+      this.buffers[idx].firstMoveToBufferedStart(enabled);
+    }
   }
 
   resetBuffers() {
@@ -447,7 +512,7 @@ export class MSE {
       await this.buffers[track].destroy();
       delete this.buffers[track];
     }
-    if(this.mediaSource && this.mediaSource.readyState == "open") {
+    if (this.mediaSource && this.mediaSource.readyState == "open") {
       this.mediaSource.duration = 0;
       this.mediaSource.endOfStream();
     }
@@ -461,6 +526,7 @@ export class MSE {
     return this.mediaReady.then(() => {
       this.buffers[track] = new MSEBuffer(this, mimeCodec);
       this.buffers[track].setLive(this.is_live);
+      this.buffers[track].firstMoveToBufferedStart()
     });
   }
 
@@ -470,11 +536,19 @@ export class MSE {
     }
   }
 
+  scaled(timestamp) {
+    return timestamp / this.scaleFactor;
+  }
+
+  unscaled(timestamp) {
+    return timestamp * this.scaleFactor;
+  }
+
   realMoveToBuffer(timeid, pos) {
     clearInterval(timeid);
     Log.debug(`Seeking move to buffered postion:${pos}`);
     this.players[0].userSeekClick = false;
-    this.players[0].currentTime = pos;
+    this.players[0].currentTime = this.unscaled(pos);
     this.aborting = false;
   }
 
@@ -484,7 +558,7 @@ export class MSE {
     this.aborting = true;
     const timerid = setInterval(() => {
       let isInBuffered = false;
-      let currentPlayTime = this.players[0].currentTime;
+      let currentPlayTime = this.scaled(this.players[0].currentTime);
       let buffered = this.players[0].buffered;
       let bufferedLen = this.players[0].buffered.length;
       Log.debug(`Seek current time:${currentPlayTime}`);
@@ -501,7 +575,7 @@ export class MSE {
         }
       }
       if (!isInBuffered) {
-        for(let i = 0; i < bufferedLen; i++) {
+        for (let i = 0; i < bufferedLen; i++) {
           let bstart = buffered.start(i);
           let bend = buffered.end(i);
           let dur = bend - bstart;
