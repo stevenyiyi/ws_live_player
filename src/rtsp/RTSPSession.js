@@ -53,7 +53,11 @@ export class RTSPSession {
       params["Scale"] = scale;
       this.client.scale = scale;
     } else {
-      params["Range"] = `npt=${pos}-`;
+      if(pos === 0) {
+        params["Range"] = "npt=now-";
+      } else {
+        params["Range"] = `npt=${pos}-`;
+      }
       this.client.pos = pos;
     }
 

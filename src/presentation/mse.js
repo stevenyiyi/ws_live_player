@@ -108,8 +108,8 @@ export class MSEBuffer {
     return timestamp * this.parent.scaleFactor;
   }
 
-  firstMoveToBufferedStart(enabled) {
-    this.firstMoveToBufferStart = enabled;
+  firstMoveToBufferedStart(f) {
+    this.firstMoveToBufferStart = f;
   }
 
   getBufferedDuration() {
@@ -301,6 +301,7 @@ export class MSEBuffer {
         this.sourceBuffer.appendBuffer(data);
         if (this.firstMoveToBufferStart && this.sourceBuffer.buffered.length) {
           this.players[0].userSeekClick = false;
+          Log.debug(`move to first buffered:${this.sourceBuffer.buffered.start(0)}`);
           this.players[0].currentTime = this.unscaled(this.sourceBuffer.buffered.start(0));
           if (this.players[0].autoPlay) {
             this.players[0].start();
@@ -526,7 +527,6 @@ export class MSE {
     return this.mediaReady.then(() => {
       this.buffers[track] = new MSEBuffer(this, mimeCodec);
       this.buffers[track].setLive(this.is_live);
-      this.buffers[track].firstMoveToBufferedStart()
     });
   }
 

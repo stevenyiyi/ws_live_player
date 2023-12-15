@@ -30,7 +30,7 @@ function start() {
     /** Play recording */
     ///rtspurl:
     ///  "rtsp://10.201.2.17:5554/live/50011286121320004002?RecordTimeRange=1701273151_1701278137",
-    rtspurl: "rtsp://10.201.2.17:5554/live/50011286121320007004?RecordTimeRange=1701705974_1701745628",
+    rtspurl: "rtsp://10.201.2.17:5554/live/50011286121320007004?RecordTimeRange=1701707974_1701745628",
     /** Play live camera */
     /*rtspurl:
       "rtsp://50010303121110099054:991100@192.168.3.100:5554/live/50010303121329905401",*/
@@ -50,7 +50,7 @@ function start() {
     console.log(info);
   };
   /// scale: default 1  /** 倍速播放，取值为0.25 、0.5 、1 、2 、4 */
-  player.start(1, 1000);
+  player.start(1, 0);
 }
 
 let butDestroy = document.getElementById("butDestroy");
@@ -63,6 +63,7 @@ butLoad.onclick = function () {
   start();
 }
 
+/**
 let butQuarter = document.querySelector("#quarter");
 butQuarter.onclick = function () {
   player.scalePlay(0.25);
@@ -87,3 +88,4 @@ let butFour = document.querySelector("#four");
 butFour.onclick = function () {
   player.scalePlay(4);
 }
+*/

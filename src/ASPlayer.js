@@ -12,7 +12,7 @@ export class ASPlayer {
     this.bufferDuration_ = 120;
     this.supposedCurrentTime = 0;
     this.runing = false;
-    this.stream = new RTSPStream(options); 
+    this.stream = new RTSPStream(options);
     this.stream.eventSource.addEventListener("error", this._onError.bind(this));
     this.stream.eventSource.addEventListener("info", this._onInfo.bind(this));
     this._playEvent = this._playHandler.bind(this);
@@ -140,8 +140,10 @@ export class ASPlayer {
   /** Load */
   start(scale = 1, offset = 0) {
     if (this.stream) {
-      this._video.userSeekClick = false;
-      this._video.currentTime = offset;
+      if (offset > 0) {
+        this._video.userSeekClick = false;
+        this._video.currentTime = offset;
+      }
       return this.stream.load(scale, offset);
     } else {
       Promise.reject("Not attach stream!");
