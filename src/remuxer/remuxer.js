@@ -81,7 +81,7 @@ export class Remuxer {
 
   setScale(scale) {
     for (let track_type in this.tracks) {
-      this.tracks[track_type].scaleFactor = scale;
+      this.tracks[track_type].setScale(scale);
     }
     this.MSE.setScale(scale);
   }

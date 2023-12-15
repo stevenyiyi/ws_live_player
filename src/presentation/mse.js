@@ -377,6 +377,7 @@ export class MSE {
     this.eventSource = new EventEmitter(this.mediaSource);
     this.aborting = false;
     this.scaleFactor = 1.0;
+    this.firstMoveToBufferedStart = true;
     this.reset();
   }
 
@@ -449,6 +450,7 @@ export class MSE {
     for (let idx in this.buffers) {
       this.buffers[idx].firstMoveToBufferedStart(enabled);
     }
+    this.firstMoveToBufferedStart = enabled;
   }
 
   resetBuffers() {
@@ -527,6 +529,7 @@ export class MSE {
     return this.mediaReady.then(() => {
       this.buffers[track] = new MSEBuffer(this, mimeCodec);
       this.buffers[track].setLive(this.is_live);
+      this.buffers[track].firstMoveToBufferedStart(this.firstMoveToBufferedStart);
     });
   }
 

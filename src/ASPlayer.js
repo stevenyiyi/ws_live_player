@@ -11,6 +11,7 @@ export class ASPlayer {
     this.queryCredentials = null;
     this.bufferDuration_ = 120;
     this.supposedCurrentTime = 0;
+    this.scale = 1.0;
     this.runing = false;
     this.stream = new RTSPStream(options);
     this.stream.eventSource.addEventListener("error", this._onError.bind(this));
@@ -38,13 +39,13 @@ export class ASPlayer {
   _seekingHandler() {
     if (this._video.userSeekClick) {
       if (this.stream.seekable) {
-        let result = this._is_in_buffered(this._video.currentTime);
+        let result = this._is_in_buffered(this.scaled(this._video.currentTime));
         if (!result.inBuffered) {
           console.log(`seek to ${this._video.currentTime}`);
           this.stream.seek(this._video.currentTime);
         } else {
           console.log(`seek in buffered,move to:${result.seekOffset}`);
-          this.stream.seek(result.seekOffset);
+          this.stream.seek(this.unscaled(result.seekOffset));
         }
       } else {
         let delta = this._video.currentTime - this.supposedCurrentTime;
@@ -137,6 +138,14 @@ export class ASPlayer {
     return !(this._video.paused || this.stream.paused);
   }
 
+  scaled(timestamp) {
+    return timestamp / this.scale;
+  }
+
+  unscaled(timestamp) {
+    return timestamp * this.scale;
+  }
+
   /** Load */
   start(scale = 1, offset = 0) {
     if (this.stream) {
@@ -144,6 +153,7 @@ export class ASPlayer {
         this._video.userSeekClick = false;
         this._video.currentTime = offset;
       }
+      this.scale = scale;
       return this.stream.load(scale, offset);
     } else {
       Promise.reject("Not attach stream!");
@@ -153,6 +163,7 @@ export class ASPlayer {
   /** Scale play */
   scalePlay(scale) {
     if (this.stream) {
+      this.scale = scale;
       this.stream.scalePlay(scale);
     }
   }
