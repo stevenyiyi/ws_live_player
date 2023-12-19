@@ -1,6 +1,7 @@
 import { EventEmitter } from "../utils/event.js";
 import { getTagged } from "../utils/logger.js";
 
+const BUFFER_END_THRESHOLD = 0.5;
 const LOG_TAG = "mse";
 const Log = getTagged(LOG_TAG);
 
