@@ -1,4 +1,4 @@
-import FactoryMaker from "./factoryMaker";
+import FactoryMaker from "./FactoryMaker.js";
 
 const LOG_LEVEL_NONE = 0;
 const LOG_LEVEL_FATAL = 1;

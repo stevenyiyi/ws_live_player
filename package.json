@@ -8,7 +8,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "parcel": "latest"
+    "parcel": "^2.12.0"
   },
   "devDependencies": {
     "@babel/core": "latest",
