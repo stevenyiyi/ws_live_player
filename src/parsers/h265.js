@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 import { ExpGolomb } from "./exp-golomb.js";
 import { HEVC_NALU } from "./nalu-hevc.js";
 

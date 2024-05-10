@@ -26,7 +26,7 @@ export class Logger {
         [LogLevel.Log]:'log',
         [LogLevel.Warn]:'warn',
         [LogLevel.Error]:'error'
-    }};
+    }}
 
     _log(lvl, args) {
         args = Array.prototype.slice.call(args);

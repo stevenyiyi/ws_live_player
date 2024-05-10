@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /**
  * @module FactoryMaker
  * @ignore

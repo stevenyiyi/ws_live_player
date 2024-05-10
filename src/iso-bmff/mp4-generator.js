@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /**
  * Generate MP4 Box
  */
