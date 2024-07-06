@@ -121,11 +121,11 @@ return instance;
 
 }
 
-EventBus.__dashjs_factory_name = 'EventBus';
+EventBus.__asjs_factory_name = 'EventBus';
 const factory = FactoryMaker.getSingletonFactory(EventBus);
 factory.EVENT_PRIORITY_LOW = EVENT_PRIORITY_LOW;
 factory.EVENT_PRIORITY_HIGH = EVENT_PRIORITY_HIGH;
 factory.EVENT_MODE_ON_RECEIVE = EVENT_MODE_ON_RECEIVE;
 factory.EVENT_MODE_ON_START = EVENT_MODE_ON_START;
-FactoryMaker.updateSingletonFactory(EventBus.__dashjs_factory_name, factory);
+FactoryMaker.updateSingletonFactory(EventBus.__asjs_factory_name, factory);
 export default factory;

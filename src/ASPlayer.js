@@ -1,3 +1,4 @@
+import FactoryMaker from "./core/FactoryMaker.js";
 import { getTagged } from "./utils/logger.js";
 import RTSPStream from "./rtsp/RTSPStream";
 const LOG_TAG = "ASPlayer";

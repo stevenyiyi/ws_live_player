@@ -1,10 +1,12 @@
-import EventBus from "core/EventBus";
-import Events from "core/events/Events";
-import Logger from "core/Logger";
+import EventBus from "./core/EventBus";
+import Events from "./core/events/Events";
+import Logger from "./core/Logger";
+import FactoryMaker from "./core/FactoryMaker";
 import { ASMediaError } from "./api/ASMediaError";
 
 function WSSession(eventBus, url, protocols, is_reconnect) {
   const context = this.context;
+  const logger_ = Logger(context).getInstance();
   let instance,
     ws_,
     connectPromise_,
@@ -13,7 +15,7 @@ function WSSession(eventBus, url, protocols, is_reconnect) {
     attempts_ = 1;
 
   function setup() {
-    logger = Logger.getLogger(instance);
+    logger = logger_.getLogger(instance);
   }
 
   function _connecting() {
@@ -169,7 +171,9 @@ function WSSession(eventBus, url, protocols, is_reconnect) {
       }
     });
   }
-  instance = {connect, disconnect, send};
+  instance = { connect, disconnect, send };
   setup();
   return instance;
 }
+WSSession.__asjs_factory_name = "WSSession";
+export default FactoryMaker.getClassFactory(WSSession);

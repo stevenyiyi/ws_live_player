@@ -3,28 +3,10 @@
  * HTMLMediaElement.error property
  */
 export class ASMediaError {
-  static get MEDIA_ERR_SYSTEM() {
-    return 1;
-  }
-  /** Network error */
-  static get MEDIA_ERR_NETWORK() {
-    return 2;
-  }
-  /** RTSP error, message:{code: xxx, statusLine: xxxxxx} */
-  static get MEDIA_ERR_RTSP() {
-    return 3;
-  }
-  /** av packet assembly error */
-  static get MEDIA_ERR_AV() {
-    return 4;
-  }
-  /** MSE error */
-  static get MEDIA_ERR_DECODE() {
-    return 5;
-  }
-  constructor(code, message) {
-    this.code = code;
-    this.message = message;
+  constructor(code, message, data) {
+    this.code = code || null;
+    this.message = message || null;
+    this.data = data || null;
   }
 }
 
